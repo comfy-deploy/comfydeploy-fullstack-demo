@@ -3,24 +3,53 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently --kill-others --prefix none \"PORT=3006 next dev --turbo\" \"PORT=3006 bun run localtunnel.mjs\"",
+    "predev": "bun run pre-dev.ts",
+    "prebuild": "bun run pre-build.ts",
+    "postbuild": "bun run post-build.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "bun run seed.mts",
+    "generate": "drizzle-kit generate:sqlite"
   },
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.3"
+    "@clerk/nextjs": "^5.0.6",
+    "@hookform/resolvers": "^3.3.4",
+    "@libsql/client": "^0.6.0",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-progress": "^1.0.3",
+    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-separator": "^1.0.3",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@types/tcp-port-used": "^1.0.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "comfydeploy": "^0.0.16",
+    "concurrently": "^8.2.2",
+    "drizzle-kit": "^0.20.17",
+    "drizzle-orm": "^0.30.10",
+    "drizzle-zod": "^0.5.1",
+    "lucide-react": "^0.378.0",
+    "next": "rc",
+    "react": "rc",
+    "react-dom": "rc",
+    "react-hook-form": "^7.51.3",
+    "swr": "beta",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "tcp-port-used": "^1.0.2",
+    "zod": "^3.23.6"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.3",
+    "localtunnel": "^2.0.2",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.3"
+    "typescript": "^5"
   }
 }

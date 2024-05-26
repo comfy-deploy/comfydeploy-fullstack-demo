@@ -1,5 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+local.db
+
+tunnel_url.txt
+
 # dependencies
 /node_modules
 /.pnp
