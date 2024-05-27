@@ -9,7 +9,6 @@ import { headers } from "next/headers";
 import { promises as fs } from "node:fs";
 
 const client = new ComfyDeployClient({
-	apiBase: "https://staging.comfydeploy.com",
 	apiToken: process.env.COMFY_DEPLOY_API_KEY,
 });
 
