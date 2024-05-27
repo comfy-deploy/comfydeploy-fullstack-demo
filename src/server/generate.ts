@@ -40,24 +40,25 @@ export async function generateImage(prompt: string) {
 
 	if (!userId) throw new Error("User not found");
 
+	const inputs = {
+		positive_prompt: prompt,
+		negative_prompt: "text, watermark",
+	};
+
 	const result = await client.run({
 		deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
 		webhook: `${endpoint}/api/webhook`, // optional
-		inputs: {
-			positive_prompt: prompt,
-			negative_prompt: "text, watermark",
-		},
+		inputs: inputs,
 	});
 
 	if (result) {
 		await db.insert(runs).values({
 			run_id: result.run_id,
 			user_id: userId,
+			inputs: inputs,
 		});
 		return result.run_id;
 	}
-
-	revalidatePath("/");
 
 	return undefined;
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import { SignIn, SignInButton, useSignIn } from "@clerk/nextjs";
 import { Button } from "./ui/button";
 import {
@@ -7,7 +9,7 @@ import {
 	CardDescription,
 	CardContent,
 } from "./ui/card";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRight, ArrowRightIcon } from "lucide-react";
 import coverImage from "@/images/cover-image.jpg";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
@@ -39,7 +41,7 @@ export function Onboarding() {
 							<Button
 								variant="expandIcon"
 								className="rounded-xl"
-								Icon={ArrowRightIcon}
+								Icon={ArrowRight}
 								iconPlacement="right"
 							>
 								Get Started

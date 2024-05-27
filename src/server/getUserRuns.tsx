@@ -8,6 +8,18 @@ import { eq, desc } from "drizzle-orm";
 export async function getUserRuns() {
 	const { userId } = auth();
 	if (!userId) throw new Error("User not found");
+
+	// return [
+	// 	{
+	// 		run_id: "123",
+	// 		createdAt: 123,
+	// 	},
+	// 	{
+	// 		run_id: "1232",
+	// 		createdAt: 123,
+	// 	},
+	// ];
+
 	return db
 		.select()
 		.from(runs)

@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { getUserRuns } from "@/server/getUserRuns";
 import React from "react";
 import { ImageGenerationResult } from "./ImageGenerationResult";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 export function UserRuns() {
 	const { data: userRuns, isValidating } = useSWR("userRuns", getUserRuns, {
@@ -12,17 +13,26 @@ export function UserRuns() {
 
 	if (userRuns) {
 		return (
-			<div>
-				<div className="grid grid-cols-2 gap-4 pb-32">
-					{userRuns.map((run) => (
-						<React.Fragment key={run.id}>
-							<div className="rounded-sm overflow-hidden">
-								{!run.image_url && <ImageGenerationResult runId={run.run_id} />}
-								{run.image_url && <img src={run.image_url} alt="Run" />}
+			<div className="max-w-[800px] w-full grid grid-cols-2 md:gap-4 pb-32">
+				{userRuns.map((run) => (
+					<div
+						className="md:rounded-sm overflow-hidden relative group"
+						key={run.run_id}
+					>
+						{!run.image_url && <ImageGenerationResult runId={run.run_id} />}
+						{run.image_url && <img src={run.image_url} alt="Run" />}
+						{run.inputs && (
+							<div className="transition-opacity group-hover:opacity-100 opacity-0 absolute bottom-0 text-xs text-white/80 p-4 bg-slate-950/40 flex flex-col gap-2">
+								{Object.entries(run.inputs).map(([key, value]) => (
+									<div key={key}>
+										<span className="font-bold">{key}:</span>{" "}
+										<span>{value}</span>
+									</div>
+								))}
 							</div>
-						</React.Fragment>
-					))}
-				</div>
+						)}
+					</div>
+				))}
 			</div>
 		);
 	}
