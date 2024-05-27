@@ -18,9 +18,9 @@ import { Suspense } from "react";
 
 export function Onboarding() {
 	return (
-		<div className="flex w-full h-full mt-4 md:items-center justify-center gap-2 relative">
+		<div className="flex w-full h-full pt-4 md:items-center justify-center gap-2 relative">
 			<Image
-				className="blur-2xl opacity-20 mb-4 absolute -z-10 w-screen h-full object-cover"
+				className="blur-2xl opacity-20 mb-4 fixed -z-10 w-screen h-full object-cover"
 				src={coverImage}
 				alt="Relighting Demo"
 			/>
