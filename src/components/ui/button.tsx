@@ -22,6 +22,8 @@ const buttonVariants = cva(
 				link: "text-primary underline-offset-4 hover:underline",
 				expandIcon:
 					"group relative text-primary-foreground bg-primary hover:bg-primary/90",
+				expandIconOutline:
+					"group relative border border-input bg-background hover:bg-accent hover:text-accent-foreground",
 				ringHover:
 					"bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:ring-2 hover:ring-primary/90 hover:ring-offset-2",
 				shine:
@@ -83,19 +85,35 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonIconProps>(
 	) => {
 		const [isLoading, setIsLoading] = useState(false);
 		const Comp = asChild ? Slot : "button";
-    
+
+		const _onClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+			if (isLoading) return;
+
+			setIsLoading(true);
+			await onClick?.(e);
+			setIsLoading(false);
+		};
+
+		if (asChild) {
+			return (
+				<Comp
+					disabled={isLoading}
+					className={cn(buttonVariants({ variant, size, className }))}
+					ref={ref}
+					onClick={_onClick}
+					{...props}
+				>
+					{props.children}
+				</Comp>
+			);
+		}
+
 		return (
 			<Comp
 				disabled={isLoading}
 				className={cn(buttonVariants({ variant, size, className }))}
 				ref={ref}
-				onClick={async (e) => {
-					if (isLoading) return;
-
-					setIsLoading(true);
-					await onClick?.(e);
-					setIsLoading(false);
-				}}
+				onClick={_onClick}
 				{...props}
 			>
 				{Icon && iconPlacement === "left" && (
@@ -109,14 +127,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonIconProps>(
 						<Icon size={16} />
 					</div>
 				)}
-				<div
-					className={cn(
-						"w-0 translate-x-[100%] pl-0 opacity-0 transition-all duration-200",
-						isLoading && "w-5 translate-x-0 pl-2 opacity-100",
-					)}
-				>
-					<LoaderCircle size={16} className="animate-spin" />
-				</div>
+				{onClick && (
+					<div
+						className={cn(
+							"w-0 translate-x-[100%] pl-0 opacity-0 transition-all duration-200",
+							isLoading && "w-5 translate-x-0 pl-2 opacity-100",
+						)}
+					>
+						<LoaderCircle size={16} className="animate-spin" />
+					</div>
+				)}
 			</Comp>
 		);
 	},

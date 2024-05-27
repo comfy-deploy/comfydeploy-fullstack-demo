@@ -9,47 +9,59 @@ import {
 	CardDescription,
 	CardContent,
 } from "./ui/card";
-import { ArrowRight, ArrowRightIcon } from "lucide-react";
+import { ArrowRight, ArrowRightIcon, ExternalLink, Github } from "lucide-react";
 import coverImage from "@/images/cover-image.jpg";
 import Image from "next/image";
 import { Separator } from "./ui/separator";
+import Link from "next/link";
+import { Suspense } from "react";
 
 export function Onboarding() {
 	return (
 		<div className="flex w-full h-full items-center justify-center gap-2 relative">
 			<Image
-				className="blur-2xl opacity-40 mb-4 absolute -z-10 w-screen h-full object-cover"
+				className="blur-2xl opacity-20 mb-4 absolute -z-10 w-screen h-full object-cover"
 				src={coverImage}
 				alt="Relighting Demo"
 			/>
-			<Card className="rounded-3xl shadow-xl max-w-[500px] h-fit w-full overflow-hidden">
+			<div className="flex flex-col md:flex-row md:items-center justify-center h-fit gap-4 w-full overflow-hidden">
 				<Image
-					className="rounded-3xl p-2 w-full"
+					className="rounded-3xl p-2 w-full max-w-[400px]"
 					src={coverImage}
 					alt="Relighting Demo"
 				/>
-				<CardHeader>
-					<CardTitle>Relighting Demo</CardTitle>
+				<div className="px-6 gap-2 w-full md:w-fit flex flex-col h-full justify-center">
+					<CardTitle>Integrate ComfyUI into your project</CardTitle>
 					<CardDescription>
-						Relight your image with IC Light ComfyUI
+						A demo app build with Next js 15, Tailwind, Shadcn UI, Drizzle,
+						Turso, Clerk
 					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Separator className="my-4" />
-					<div className="flex justify-end">
+
+					<Separator className="my-4 bg-primary/40" />
+					<div className="flex justify-start gap-2">
 						<SignInButton mode="modal">
 							<Button
 								variant="expandIcon"
-								className="rounded-xl"
+								className="rounded-xl transition-all hover:scale-105"
 								Icon={ArrowRight}
 								iconPlacement="right"
 							>
 								Get Started
 							</Button>
 						</SignInButton>
+						<Button variant="outline" className="rounded-xl" asChild>
+							<Link
+								target="_blank"
+								href="https://github.com/comfy-deploy/comfydeploy-fullstack-demo"
+								className="flex gap-2 items-center"
+							>
+								GitHub
+								<ExternalLink size={16} />
+							</Link>
+						</Button>
 					</div>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
 }

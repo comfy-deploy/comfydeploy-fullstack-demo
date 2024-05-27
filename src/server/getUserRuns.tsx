@@ -9,6 +9,7 @@ export async function getUserRuns() {
 	const { userId } = auth();
 	if (!userId) throw new Error("User not found");
 
+	// return []
 	// return [
 	// 	{
 	// 		run_id: "123",

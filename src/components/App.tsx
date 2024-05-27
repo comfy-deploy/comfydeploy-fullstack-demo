@@ -17,7 +17,7 @@ export function App() {
 	);
 
 	return (
-		<div className="fixed bottom-0 md:bottom-2 flex flex-col gap-2 w-full md:max-w-lg mx-auto">
+		<div className="fixed z-50 bottom-0 md:bottom-2 flex flex-col gap-2 w-full md:max-w-lg mx-auto">
 			<Card className="p-2 shadow-lg rounded-none md:rounded-2xl">
 				{/* <Label htmlFor="input">Text Prompt</Label> */}
 				<div className="flex gap-2">

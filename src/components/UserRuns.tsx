@@ -5,13 +5,14 @@ import { getUserRuns } from "@/server/getUserRuns";
 import React from "react";
 import { ImageGenerationResult } from "./ImageGenerationResult";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { Sparkle } from "lucide-react";
 
 export function UserRuns() {
 	const { data: userRuns, isValidating } = useSWR("userRuns", getUserRuns, {
 		refreshInterval: 5000,
 	});
 
-	if (userRuns) {
+	if (userRuns && userRuns.length > 0) {
 		return (
 			<div className="max-w-[800px] w-full grid grid-cols-2 md:gap-4 pb-32">
 				{userRuns.map((run) => (
@@ -37,5 +38,7 @@ export function UserRuns() {
 		);
 	}
 
-	return <></>;
+	return <div className="text-sm flex w-full h-[calc(100vh-45px-50px)] justify-center items-center text-gray-400 gap-2">
+		Start generating some images! <Sparkle size={16}/>
+	</div>;
 }
