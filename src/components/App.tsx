@@ -23,7 +23,7 @@ export function App() {
 				<div className="flex gap-2">
 					<Input
 						id="input"
-						className="rounded-xl"
+						className="rounded-xl text-base sm:text-sm"
 						value={prompt}
 						onChange={(e) => setPrompt(e.target.value)}
 						placeholder="An amazing image"

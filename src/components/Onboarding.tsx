@@ -18,31 +18,31 @@ import { Suspense } from "react";
 
 export function Onboarding() {
 	return (
-		<div className="flex w-full h-full items-center justify-center gap-2 relative">
+		<div className="flex w-full h-full mt-4 md:items-center justify-center gap-2 relative">
 			<Image
 				className="blur-2xl opacity-20 mb-4 absolute -z-10 w-screen h-full object-cover"
 				src={coverImage}
 				alt="Relighting Demo"
 			/>
-			<div className="flex flex-col md:flex-row md:items-center justify-center h-fit gap-4 w-full overflow-hidden">
+			<div className="flex flex-col md:flex-row items-center justify-center h-fit gap-4 w-full overflow-hidden">
 				<Image
 					className="rounded-3xl p-2 w-full max-w-[400px]"
 					src={coverImage}
 					alt="Relighting Demo"
 				/>
 				<div className="px-6 gap-2 w-full md:w-fit flex flex-col h-full justify-center">
-					<CardTitle>Integrate ComfyUI into your project</CardTitle>
-					<CardDescription>
+					<CardTitle className="text-balance">Integrate ComfyUI into your project</CardTitle>
+					<CardDescription className="text-balance">
 						A demo app build with Next js 15, Tailwind, Shadcn UI, Drizzle,
 						Turso, Clerk
 					</CardDescription>
 
 					<Separator className="my-4 bg-primary/40" />
-					<div className="flex justify-start gap-2">
+					<div className="flex flex-col md:flex-row justify-start gap-2">
 						<SignInButton mode="modal">
 							<Button
 								variant="expandIcon"
-								className="rounded-xl transition-all hover:scale-105"
+								className="w-full md:w-fit rounded-xl transition-all hover:scale-105"
 								Icon={ArrowRight}
 								iconPlacement="right"
 							>
