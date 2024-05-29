@@ -1,5 +1,10 @@
 Full stack demo build with Next js 15, Tailwind, Shadcn UI, Drizzle, Turso, Clerk
 
+## Setting up ComfyUI workflow
+
+1. Clone the workflow here https://www.comfydeploy.com/share/comfy-deploy-full-stack-demo
+2. Deploy the workflow and use default machine to Production
+
 ## Setup Environment variable (Local)
 
 ```bash
@@ -31,3 +36,9 @@ bun dev
 ```
 
 Open [http://localhost:3006](http://localhost:3006) with your browser to see the result.
+
+## Deploying to Prod
+
+1. Deploy to Vercel
+2. Create a new clerk production environment, add env to vercel
+3. Create a https://turso.tech/ db, and copy over the token to vercel
