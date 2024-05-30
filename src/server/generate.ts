@@ -66,3 +66,9 @@ export async function generateImage(prompt: string) {
 export async function checkStatus(run_id: string) {
 	return await client.getRun(run_id);
 }
+
+export async function getRealtimeWebsocketUrl() {
+	return await client.getWebsocketUrl({
+		deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
+	});
+}
