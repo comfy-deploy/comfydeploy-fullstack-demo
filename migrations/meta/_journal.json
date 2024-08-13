@@ -15,6 +15,13 @@
       "when": 1716787043557,
       "tag": "0001_gifted_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1722890971223,
+      "tag": "0002_freezing_weapon_omega",
+      "breakpoints": true
     }
   ]
 }

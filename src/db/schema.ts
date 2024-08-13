@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, real } from "drizzle-orm/sqlite-core";
 
 export const runs = sqliteTable("runs", {
 	run_id: text("run_id").notNull().primaryKey(),
@@ -9,4 +9,6 @@ export const runs = sqliteTable("runs", {
 	),
 	image_url: text("image_url"),
 	inputs: text("inputs", { mode: "json" }).$type<Record<string, string>>(),
+	live_status: text("live_status"),
+	progress: real("progress"),
 });

@@ -3,13 +3,13 @@
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { ComfyDeployClient } from "comfydeploy";
+import { ComfyDeploy } from "comfydeploy";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { promises as fs } from "node:fs";
 
-const client = new ComfyDeployClient({
-	apiToken: process.env.COMFY_DEPLOY_API_KEY,
+const client = new ComfyDeploy({
+	bearerAuth: process.env.COMFY_DEPLOY_API_KEY,
 });
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -45,30 +45,32 @@ export async function generateImage(prompt: string) {
 		negative_prompt: "text, watermark",
 	};
 
-	const result = await client.run({
-		deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
+	const result = await client.run.create({
+		deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
 		webhook: `${endpoint}/api/webhook`, // optional
 		inputs: inputs,
 	});
 
 	if (result) {
 		await db.insert(runs).values({
-			run_id: result.run_id,
+			run_id: result.runId,
 			user_id: userId,
 			inputs: inputs,
 		});
-		return result.run_id;
+		return result.runId;
 	}
 
 	return undefined;
 }
 
 export async function checkStatus(run_id: string) {
-	return await client.getRun(run_id);
+	return await client.run.get({
+		runId: run_id,
+	});
 }
 
 export async function getRealtimeWebsocketUrl() {
-	return await client.getWebsocketUrl({
-		deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
+	return await client.websocket.get({
+		deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
 	});
 }

@@ -24,11 +24,11 @@ export function ImageGenerationResult({
 				if (res) {
 					setStatus(res.status);
 					setProgress(res.progress);
-					setLiveStatus(res.live_status ?? null);
+					setLiveStatus(res.liveStatus ?? null);
 				}
 				if (res && res.status === "success") {
-					console.log(res.outputs[0]?.data);
-					setImage(res.outputs[0]?.data?.images?.[0].url ?? "");
+					console.log(res.outputs?.[0]?.data);
+					setImage(res.outputs?.[0]?.data?.images?.[0].url ?? "");
 					setLoading(false);
 					clearInterval(interval);
 				}
@@ -45,11 +45,7 @@ export function ImageGenerationResult({
 			)}
 		>
 			{!loading && image && (
-				<img
-					className="w-full h-full"
-					src={image}
-					alt="Generated image"
-				></img>
+				<img className="w-full h-full" src={image} alt="Generated image"></img>
 			)}
 			{!image && status && (
 				<div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
@@ -57,10 +53,7 @@ export function ImageGenerationResult({
 						{status} <LoadingIcon />
 					</div>
 					{progress !== undefined && (
-						<Progress
-							value={progress * 100}
-							className="h-[2px] w-full"
-						/>
+						<Progress value={progress * 100} className="h-[2px] w-full" />
 					)}
 					<span className="text-sm text-center text-gray-400">
 						{" "}

@@ -14,7 +14,7 @@
     "generate": "drizzle-kit generate:sqlite"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.0.6",
+    "@clerk/nextjs": "5.2.13",
     "@hookform/resolvers": "^3.3.4",
     "@libsql/client": "^0.6.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -26,7 +26,7 @@
     "@types/tcp-port-used": "^1.0.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "comfydeploy": "^0.0.16",
+    "comfydeploy": "0.0.19-beta.23",
     "concurrently": "^8.2.2",
     "drizzle-kit": "^0.20.17",
     "drizzle-orm": "^0.30.10",

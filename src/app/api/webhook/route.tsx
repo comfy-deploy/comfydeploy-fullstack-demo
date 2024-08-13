@@ -1,26 +1,35 @@
-
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
-import { parseWebhookDataSafe } from "comfydeploy";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { RunUpdatesRequestBody$inboundSchema } from "comfydeploy/models/webhooks";
 
 export async function POST(request: Request) {
-    const [_data, error] = await parseWebhookDataSafe(request);
-    if (!_data || error) return error;
+	const parseData = RunUpdatesRequestBody$inboundSchema.safeParse(
+		await request.json(),
+	);
 
-    const { status, run_id, outputs } = _data;
+	if (!parseData.success) {
+		return NextResponse.json({ message: "error" }, { status: 400 });
+	}
 
-    if (status === "success") {
-        const imageUrl = outputs[0].data?.images?.[0].url
-        await db.update(runs).set({
-            image_url: imageUrl,
-        }).where(eq(runs.run_id, run_id));
-        console.log("updated", run_id, imageUrl);
-    }
+	const data = parseData.data;
 
-    // Do your things
-    console.log(status, run_id, outputs);
+	const { status, runId, outputs } = data;
 
-    return NextResponse.json({ message: "success" }, { status: 200 });
+	if (status === "success") {
+		const imageUrl = outputs[0].data?.images?.[0].url;
+		await db
+			.update(runs)
+			.set({
+				image_url: imageUrl,
+			})
+			.where(eq(runs.run_id, runId));
+		console.log("updated", runId, imageUrl);
+	}
+
+	// Do your things
+	console.log(status, runId, outputs);
+
+	return NextResponse.json({ message: "success" }, { status: 200 });
 }

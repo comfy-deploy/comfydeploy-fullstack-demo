@@ -1,8 +1,9 @@
 "use client";
 
+import type { ComfyDeploy } from "comfydeploy";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import type { ComfyDeployClient } from "comfydeploy";
+// import type { ComfyDeployClient } from "comfydeploy";
 
 export function useComfyWebSocket({
 	enabled = true,
@@ -14,7 +15,9 @@ export function useComfyWebSocket({
 	workflow_id: string;
 	getWebsocketUrl: (
 		workflow_id: string,
-	) => ReturnType<ComfyDeployClient["getWebsocketUrl"]>;
+	) => ReturnType<
+		typeof ComfyDeploy.prototype.workflows.getWebsocketDeploymentId
+	>;
 	onOutputReceived?: (props: {
 		outputId: string;
 		imageType: string;
@@ -165,7 +168,7 @@ export function useComfyWebSocket({
 			console.log("Connecting");
 			statusRef.current = "connecting";
 
-			const websocket = new WebSocket(data.ws_connection_url);
+			const websocket = new WebSocket(data.wsConnectionUrl);
 			websocket.binaryType = "arraybuffer";
 			websocket.onopen = () => {
 				setStatus("connected");
@@ -184,9 +187,7 @@ export function useComfyWebSocket({
 							setCurrentLog("done");
 						else if (message?.event === "live_status")
 							setCurrentLog(
-								`running - ${message.data?.current_node} ${(
-									message.data.progress * 100
-								).toFixed(2)}%`,
+								`running - ${message.data?.current_node} ${(message.data.progress * 100).toFixed(2)}%`,
 							);
 						else if (message?.event === "elapsed_time")
 							setCurrentLog(
