@@ -16,7 +16,7 @@ export function useComfyWebSocket({
 	getWebsocketUrl: (
 		workflow_id: string,
 	) => ReturnType<
-		typeof ComfyDeploy.prototype.workflows.getWebsocketDeploymentId
+		typeof ComfyDeploy.prototype.websocket.get
 	>;
 	onOutputReceived?: (props: {
 		outputId: string;
