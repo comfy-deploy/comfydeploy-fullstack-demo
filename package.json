@@ -26,7 +26,7 @@
     "@types/tcp-port-used": "^1.0.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "comfydeploy": "0.0.19-beta.23",
+    "comfydeploy": "2.0.0-beta.49",
     "concurrently": "^8.2.2",
     "drizzle-kit": "^0.20.17",
     "drizzle-orm": "^0.30.10",

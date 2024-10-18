@@ -8,6 +8,7 @@ export async function POST(request: Request) {
 	const parseData = RunUpdatesRequestBody$inboundSchema.safeParse(
 		await request.json(),
 	);
+	// console.log("webhook", parseData);
 
 	if (!parseData.success) {
 		return NextResponse.json({ message: "error" }, { status: 400 });

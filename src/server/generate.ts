@@ -9,7 +9,7 @@ import { headers } from "next/headers";
 import { promises as fs } from "node:fs";
 
 const client = new ComfyDeploy({
-	bearerAuth: process.env.COMFY_DEPLOY_API_KEY,
+	bearer: process.env.COMFY_DEPLOY_API_KEY,
 });
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -45,7 +45,7 @@ export async function generateImage(prompt: string) {
 		negative_prompt: "text, watermark",
 	};
 
-	const result = await client.run.create({
+	const result = await client.run.queue({
 		deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
 		webhook: `${endpoint}/api/webhook`, // optional
 		inputs: inputs,
@@ -66,11 +66,5 @@ export async function generateImage(prompt: string) {
 export async function checkStatus(run_id: string) {
 	return await client.run.get({
 		runId: run_id,
-	});
-}
-
-export async function getRealtimeWebsocketUrl() {
-	return await client.websocket.get({
-		deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
 	});
 }
