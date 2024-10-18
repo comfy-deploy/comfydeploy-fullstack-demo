@@ -3,6 +3,7 @@
 import { LoadingIcon } from "@/components/LoadingIcon";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useComfyQuery } from "@/hooks/hooks";
 import { cn } from "@/lib/utils";
 import { checkStatus } from "@/server/generate";
 import { useEffect, useState } from "react";
@@ -17,26 +18,53 @@ export function ImageGenerationResult({
 	const [liveStatus, setLiveStatus] = useState<string | null>();
 	const [loading, setLoading] = useState(true);
 
-	// Polling in frontend to check for the
+	const { data, isLoading } = useComfyQuery(
+		"run",
+		"get",
+		[
+			{
+				runId: runId,
+			},
+		],
+		{
+			refetchInterval: 2000,
+		},
+	);
+
 	useEffect(() => {
-		if (!runId) return;
-		const interval = setInterval(() => {
-			checkStatus(runId).then((res) => {
-				if (res) {
-					setStatus(res.status);
-					setProgress(res.progress);
-					setLiveStatus(res.liveStatus ?? null);
-				}
-				if (res && res.status === "success") {
-					console.log(res.outputs?.[0]?.data);
-					setImage(res.outputs?.[0]?.data?.images?.[0].url ?? "");
-					setLoading(false);
-					clearInterval(interval);
-				}
-			});
-		}, 2000);
-		return () => clearInterval(interval);
-	}, [runId]);
+		const res = data;
+		if (res) {
+			setStatus(res.status);
+			setProgress(res.progress);
+			setLiveStatus(res.liveStatus ?? null);
+		}
+		if (res && res.status === "success") {
+			// console.log(res.outputs?.[0]?.data);
+			setImage(res.outputs?.[0]?.data?.images?.[0].url ?? "");
+			setLoading(false);
+		}
+	}, [data]);
+
+	// Polling in frontend to check for the
+	// useEffect(() => {
+	// 	if (!runId) return;
+	// 	const interval = setInterval(() => {
+	// 		checkStatus(runId).then((res) => {
+	// 			if (res) {
+	// 				setStatus(res.status);
+	// 				setProgress(res.progress);
+	// 				setLiveStatus(res.liveStatus ?? null);
+	// 			}
+	// 			if (res && res.status === "success") {
+	// 				console.log(res.outputs?.[0]?.data);
+	// 				setImage(res.outputs?.[0]?.data?.images?.[0].url ?? "");
+	// 				setLoading(false);
+	// 				clearInterval(interval);
+	// 			}
+	// 		});
+	// 	}, 2000);
+	// 	return () => clearInterval(interval);
+	// }, [runId]);
 
 	return (
 		<div

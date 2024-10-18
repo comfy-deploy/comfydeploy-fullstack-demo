@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { HandleSignout } from "@/components/HandleSignout";
+import { ComfyDeployProvider } from "@/hooks/hooks";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,7 +28,9 @@ export default function RootLayout({
 	return (
 		<ClerkProvider>
 			<html lang="en">
-				<body className={inter.className}>{children}</body>
+				<ComfyDeployProvider>
+					<body className={inter.className}>{children}</body>
+				</ComfyDeployProvider>
 				<Toaster />
 				<HandleSignout />
 			</html>
