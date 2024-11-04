@@ -1,14 +1,12 @@
-import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text, real } from "drizzle-orm/sqlite-core";
+// schema.ts
+import { pgTable, serial, text, timestamp, real } from 'drizzle-orm/pg-core';
 
-export const runs = sqliteTable("runs", {
-	run_id: text("run_id").notNull().primaryKey(),
-	user_id: text("user_id").notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" }).default(
-		sql`(strftime('%s', 'now'))`,
-	),
-	image_url: text("image_url"),
-	inputs: text("inputs", { mode: "json" }).$type<Record<string, string>>(),
-	live_status: text("live_status"),
-	progress: real("progress"),
+export const runs = pgTable('runs', {
+  run_id: serial('run_id').primaryKey(),
+  user_id: text('user_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  image_url: text('image_url'),
+  inputs: text('inputs').notNull(),
+  live_status: text('live_status'),
+  progress: real('progress'),
 });

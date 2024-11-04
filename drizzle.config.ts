@@ -1,12 +1,12 @@
+// drizzle.config.ts
 import type { Config } from 'drizzle-kit';
 
 export default {
-	out: './migrations',
-	schema: './src/db/schema.ts',
-	breakpoints: true,
-	driver: 'libsql',
-	dbCredentials: {
-		url: process.env.DATABASE_URL,
-	},
+  schema: './src/db/schema.ts',
+  out: './drizzle',
+  driver: 'pg',
+  dbCredentials: {
+    connectionString: process.env.DATABASE_URL!,
+    // Eliminar 'ssl' de aquí
+  },
 } satisfies Config;
-

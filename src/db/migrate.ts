@@ -1,13 +1,17 @@
-import { migrate } from "drizzle-orm/libsql/migrator";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+// migrate.ts
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 
-const client = createClient({
-	url: process.env.DATABASE_URL,
-	authToken: process.env.DATABASE_AUTH_TOKEN,
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
-const db = drizzle(client);
+
+const db = drizzle(pool);
 
 await migrate(db, {
-	migrationsFolder: "./migrations",
+  migrationsFolder: './drizzle',
 });

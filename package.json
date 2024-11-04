@@ -17,6 +17,7 @@
     "@clerk/nextjs": "5.2.13",
     "@hookform/resolvers": "^3.3.4",
     "@libsql/client": "^0.6.0",
+    "@prisma/client": "^5.21.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-progress": "^1.0.3",
@@ -35,6 +36,7 @@
     "lucide-react": "^0.378.0",
     "next": "rc",
     "next-themes": "^0.3.0",
+    "pg": "^8.13.1",
     "react": "rc",
     "react-dom": "rc",
     "react-hook-form": "^7.51.3",
@@ -48,12 +50,14 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
     "localtunnel": "^2.0.2",
     "postcss": "^8",
+    "prisma": "^5.21.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
