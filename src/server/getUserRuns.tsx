@@ -2,20 +2,28 @@
 
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
-// Eliminamos la importación de 'auth' de Clerk
-// import { auth } from "@clerk/nextjs/server";
-import { desc } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { eq, desc } from "drizzle-orm";
 
 export async function getUserRuns() {
-  // Eliminamos la obtención de 'userId' y la verificación de autenticación
-  // const { userId } = auth();
-  // if (!userId) throw new Error("User not found");
+	const { userId } = auth();
+	if (!userId) throw new Error("User not found");
 
-  // Opción A: Obtener todas las ejecuciones sin filtrar por 'user_id'
-  return db
-    .select()
-    .from(runs)
-    .orderBy(desc(runs.createdAt));
+	// return []
+	// return [
+	// 	{
+	// 		run_id: "123",
+	// 		createdAt: 123,
+	// 	},
+	// 	{
+	// 		run_id: "1232",
+	// 		createdAt: 123,
+	// 	},
+	// ];
 
-  // Si deseas filtrar de alguna otra manera, puedes aplicar filtros adicionales
+	return db
+		.select()
+		.from(runs)
+		.where(eq(runs.user_id, userId))
+		.orderBy(desc(runs.createdAt));
 }

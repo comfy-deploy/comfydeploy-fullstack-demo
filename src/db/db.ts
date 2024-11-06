@@ -1,12 +1,8 @@
-// db.ts
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Importante para conexiones SSL con proveedores como Supabase o Railway
-  },
+const client = createClient({
+	url: process.env.DATABASE_URL,
+	authToken: process.env.DATABASE_AUTH_TOKEN,
 });
-
-export const db = drizzle(pool);
+export const db = drizzle(client);

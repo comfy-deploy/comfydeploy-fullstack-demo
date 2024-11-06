@@ -1,1 +1,0 @@
-ALTER TABLE "runs" ALTER COLUMN "run_id" SET DATA TYPE serial;
