@@ -2,7 +2,31 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { WorkflowRunWebhookBody$inboundSchema as WebhookParser } from "comfydeploy/models/components";
+import { z } from "zod";
+
+// Esquema personalizado para los datos entrantes del webhook
+const WebhookSchema = z.object({
+  status: z.string(),
+  runId: z.string(),
+  liveStatus: z.string().optional(),
+  outputs: z.array(
+    z.object({
+      id: z.string(),
+      run_id: z.string(),
+      created_at: z.string(),
+      updated_at: z.string(),
+      data: z.object({
+        images: z.array(
+          z.object({
+            url: z.string(),
+            type: z.string(),
+            filename: z.string(),
+          })
+        )
+      })
+    })
+  ),
+});
 
 export async function POST(request: Request) {
     console.log("Receiving webhook data...");
@@ -12,13 +36,13 @@ export async function POST(request: Request) {
         console.log("Received JSON data:", JSON.stringify(jsonData, null, 2));
 
         // Parsing the incoming data to ensure it matches the expected schema
-        const parseData = WebhookParser.safeParse(jsonData);
+        const parseData = WebhookSchema.safeParse(jsonData);
         console.log("Parse result:", parseData);
 
         // If parsing fails, log the errors and respond with a 400 status code
         if (!parseData.success) {
-            console.error("Error in webhook data:", parseData.error?.format());
-            return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error?.issues }, { status: 400 });
+            console.error("Error in webhook data:", parseData.error.format());
+            return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error.issues }, { status: 400 });
         }
 
         // If parsing is successful, proceed with processing the data
@@ -26,18 +50,18 @@ export async function POST(request: Request) {
         console.log("Webhook parsed data:", { status, runId, liveStatus });
 
         if (status === "success") {
-            const imageData = outputs?.[0]?.data?.images?.[0];
+            const imageData = outputs[0]?.data?.images[0];
             
-            // Check if imageData is an object and contains a 'url' property
+            // Check if imageData contains a 'url' property
             if (imageData && typeof imageData === "object" && "url" in imageData) {
-                const imageUrl = imageData.url as string;
+                const imageUrl = imageData.url;
                 
                 // Update the database with the new image URL and live status for the given run ID
                 await db
                     .update(runs)
                     .set({
                         image_url: imageUrl,
-                        live_status: liveStatus, // Solo se incluyen campos que existen en la tabla
+                        live_status: liveStatus ?? "unknown", // Usa un valor por defecto si liveStatus está ausente
                     })
                     .where(eq(runs.run_id, runId));
                 console.log("Updated database for run ID:", runId, "with image URL:", imageUrl);
