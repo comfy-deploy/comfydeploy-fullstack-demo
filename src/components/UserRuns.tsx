@@ -4,7 +4,6 @@ import useSWR from "swr";
 import { getUserRuns } from "@/server/getUserRuns";
 import React from "react";
 import { ImageGenerationResult } from "./ImageGenerationResult";
-import { useAuth, useUser } from "@clerk/nextjs";
 import { Sparkle } from "lucide-react";
 
 export function UserRuns() {
@@ -38,7 +37,9 @@ export function UserRuns() {
 		);
 	}
 
-	return <div className="text-sm flex w-full h-[calc(100vh-45px-50px)] justify-center items-center text-gray-400 gap-2">
-		Start generating some images! <Sparkle size={16}/>
-	</div>;
+	return (
+		<div className="text-sm flex w-full h-[calc(100vh-45px-50px)] justify-center items-center text-gray-400 gap-2">
+			Start generating some images! <Sparkle size={16} />
+		</div>
+	);
 }
