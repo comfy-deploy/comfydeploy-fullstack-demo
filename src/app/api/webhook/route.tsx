@@ -56,6 +56,11 @@ export async function POST(request: Request) {
             if (imageData && typeof imageData === "object" && "url" in imageData) {
                 const imageUrl = imageData.url;
                 
+                // Logging before updating the database
+                console.log("Updating database for run ID:", runId);
+                console.log("Image URL:", imageUrl);
+                console.log("Live Status:", liveStatus ?? "unknown");
+
                 // Update the database with the new image URL and live status for the given run ID
                 await db
                     .update(runs)
@@ -64,10 +69,12 @@ export async function POST(request: Request) {
                         live_status: liveStatus ?? "unknown", // Usa un valor por defecto si liveStatus está ausente
                     })
                     .where(eq(runs.run_id, runId));
-                console.log("Updated database for run ID:", runId, "with image URL:", imageUrl);
+                console.log("Database updated successfully for run ID:", runId);
             } else {
                 console.warn("No valid image data found in outputs.");
             }
+        } else {
+            console.log("Status is not 'success', skipping database update.");
         }
 
         console.log("Webhook processing completed.");
