@@ -5,54 +5,48 @@ import { NextResponse } from "next/server";
 import { WorkflowRunWebhookBody$inboundSchema as WebhookParser } from "comfydeploy/models/components";
 
 export async function POST(request: Request) {
-    console.log("Webhook recibido: Iniciando procesamiento");
+	console.log("Webhook recibido: Iniciando procesamiento");
 
-    try {
-        // Parsear los datos del webhook
-        const parseData = WebhookParser.safeParse(await request.json());
-        
-        // Log para verificar si el parseo fue exitoso
-        if (!parseData.success) {
-            console.error("Error de validación en datos del webhook:", parseData.error?.toString());
-            return NextResponse.json({ message: "error en los datos del webhook" }, { status: 400 });
-        }
+	try {
+		const jsonData = await request.json();
+		console.log("Datos JSON recibidos en el webhook:", jsonData);
 
-        const { status, runId, outputs, liveStatus } = parseData.data;
-        console.log("Datos parseados correctamente:", { status, runId, liveStatus });
+		// Validación de los datos entrantes con el esquema de ComfyDeploy
+		const parseData = WebhookParser.safeParse(jsonData);
 
-        // Verificar y actualizar la URL de la imagen solo si el estado es "success"
-        if (status === "success" && outputs) {
-            const data = outputs[0]?.data?.images?.[0];
-            
-            if (data && typeof data !== "string" && data.url) {
-                const imageUrl = data.url;
-                await db
-                    .update(runs)
-                    .set({
-                        image_url: imageUrl,
-                        live_status: status, // Usamos live_status para almacenar el estado
-                    })
-                    .where(eq(runs.run_id, runId));
+		// Si la validación falla, retorna un error 400 y loguea el detalle del error
+		if (!parseData.success) {
+			console.error("Error en la estructura de datos del webhook:", parseData.error?.issues);
+			return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error?.issues }, { status: 400 });
+		}
 
-                console.log(`Imagen actualizada en la base de datos para runId ${runId}: ${imageUrl}`);
-            } else {
-                console.warn("No se encontró URL de imagen en outputs:", outputs);
-            }
-        } else {
-            // Actualizar solo live_status en otros estados
-            await db
-                .update(runs)
-                .set({
-                    live_status: liveStatus ?? status, // Guarda liveStatus o status aquí
-                })
-                .where(eq(runs.run_id, runId));
+		const { status, runId, outputs, liveStatus } = parseData.data;
 
-            console.log(`Estado actualizado para runId ${runId}: ${status}`);
-        }
+		// Log para verificar los datos importantes del webhook
+		console.log("Estado recibido:", status, "Run ID:", runId, "Live Status:", liveStatus);
 
-        return NextResponse.json({ message: "success" }, { status: 200 });
-    } catch (error) {
-        console.error("Error en el procesamiento del webhook:", error);
-        return NextResponse.json({ message: "error interno del servidor" }, { status: 500 });
-    }
+		if (status === "success") {
+			const imageData = outputs?.[0]?.data?.images?.[0];
+			if (imageData && typeof imageData !== "string" && imageData.url) {
+				const imageUrl = imageData.url;
+				await db
+					.update(runs)
+					.set({
+						image_url: imageUrl,
+					})
+					.where(eq(runs.run_id, runId));
+
+				console.log("Base de datos actualizada exitosamente con URL de la imagen:", imageUrl);
+			} else {
+				console.warn("Advertencia: No se encontró URL de imagen válida en los outputs");
+			}
+		} else {
+			console.log("El estado no es 'success'. Estado actual:", status);
+		}
+
+		return NextResponse.json({ message: "Webhook procesado correctamente" }, { status: 200 });
+	} catch (error) {
+		console.error("Error inesperado en el webhook:", error);
+		return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
+	}
 }
