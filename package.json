@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others --prefix none \"cross-env PORT=3006 next dev --turbo\" \"cross-env PORT=3006 bun run localtunnel.mjs\"",
-    "predev": "bun run pre-dev.ts",
+    "dev": "concurrently --kill-others --prefix none \"cross-env PORT=3006 next dev --turbo\" \"cross-env PORT=3006 bun run localtunnel.mjs\"",    "predev": "bun run pre-dev.ts",
     "prebuild": "bun run pre-build.ts",
     "postbuild": "bun run post-build.ts",
     "build": "next build",
