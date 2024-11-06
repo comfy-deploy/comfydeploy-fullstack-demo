@@ -5,48 +5,51 @@ import { NextResponse } from "next/server";
 import { WorkflowRunWebhookBody$inboundSchema as WebhookParser } from "comfydeploy/models/components";
 
 export async function POST(request: Request) {
-	console.log("Webhook recibido: Iniciando procesamiento");
+    console.log("Receiving webhook data...");
 
-	try {
-		const jsonData = await request.json();
-		console.log("Datos JSON recibidos en el webhook:", jsonData);
+    try {
+        const jsonData = await request.json();
+        console.log("Received JSON data:", JSON.stringify(jsonData, null, 2));
 
-		// Validación de los datos entrantes con el esquema de ComfyDeploy
-		const parseData = WebhookParser.safeParse(jsonData);
+        // Parsing the incoming data to ensure it matches the expected schema
+        const parseData = WebhookParser.safeParse(jsonData);
+        console.log("Parse result:", parseData);
 
-		// Si la validación falla, retorna un error 400 y loguea el detalle del error
-		if (!parseData.success) {
-			console.error("Error en la estructura de datos del webhook:", parseData.error?.issues);
-			return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error?.issues }, { status: 400 });
-		}
+        // If parsing fails, log the errors and respond with a 400 status code
+        if (!parseData.success) {
+            console.error("Error in webhook data:", parseData.error?.format());
+            return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error?.issues }, { status: 400 });
+        }
 
-		const { status, runId, outputs, liveStatus } = parseData.data;
+        // If parsing is successful, proceed with processing the data
+        const { status, runId, outputs, liveStatus } = parseData.data;
+        console.log("Webhook parsed data:", { status, runId, liveStatus });
 
-		// Log para verificar los datos importantes del webhook
-		console.log("Estado recibido:", status, "Run ID:", runId, "Live Status:", liveStatus);
+        if (status === "success") {
+            const imageData = outputs?.[0]?.data?.images?.[0];
+            
+            // Check if imageData is an object and contains a 'url' property
+            if (imageData && typeof imageData === "object" && "url" in imageData) {
+                const imageUrl = imageData.url as string;
+                
+                // Update the database with the new image URL and live status for the given run ID
+                await db
+                    .update(runs)
+                    .set({
+                        image_url: imageUrl,
+                        live_status: liveStatus, // Solo se incluyen campos que existen en la tabla
+                    })
+                    .where(eq(runs.run_id, runId));
+                console.log("Updated database for run ID:", runId, "with image URL:", imageUrl);
+            } else {
+                console.warn("No valid image data found in outputs.");
+            }
+        }
 
-		if (status === "success") {
-			const imageData = outputs?.[0]?.data?.images?.[0];
-			if (imageData && typeof imageData !== "string" && imageData.url) {
-				const imageUrl = imageData.url;
-				await db
-					.update(runs)
-					.set({
-						image_url: imageUrl,
-					})
-					.where(eq(runs.run_id, runId));
-
-				console.log("Base de datos actualizada exitosamente con URL de la imagen:", imageUrl);
-			} else {
-				console.warn("Advertencia: No se encontró URL de imagen válida en los outputs");
-			}
-		} else {
-			console.log("El estado no es 'success'. Estado actual:", status);
-		}
-
-		return NextResponse.json({ message: "Webhook procesado correctamente" }, { status: 200 });
-	} catch (error) {
-		console.error("Error inesperado en el webhook:", error);
-		return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
-	}
+        console.log("Webhook processing completed.");
+        return NextResponse.json({ message: "success" }, { status: 200 });
+    } catch (error) {
+        console.error("Error processing webhook:", error);
+        return NextResponse.json({ message: "server error" }, { status: 500 });
+    }
 }
