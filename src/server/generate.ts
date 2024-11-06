@@ -27,14 +27,15 @@ export async function generateImage(prompt: string) {
     // Obtiene el protocolo y el host de los headers de la solicitud
     const headersList = await headers();
     const host = headersList.get("host") || "";
-    const protocol = headersList.get("x-forwarded-proto") || "";
     const endpoint = `https://${host}`;
     console.log("Endpoint de webhook:", endpoint);
 
-    // Configura los inputs para la generación de la imagen
-    const inputs = {
-        positive_prompt: prompt,
-        negative_prompt: "text, watermark",
+    // Configura los inputs como un objeto plano de tipo Record<string, string>
+    const inputs: Record<string, string> = {
+        input_text: prompt,
+        batch: "1",
+        width: "832",
+        height: "1216",
     };
     console.log("Inputs configurados para ComfyDeploy:", inputs);
 
@@ -52,7 +53,7 @@ export async function generateImage(prompt: string) {
             await db.insert(runs).values({
                 run_id: result.runId,
                 user_id: userId,
-                inputs: inputs,
+                inputs: inputs, // Guarda el objeto plano directamente
             });
             console.log("Imagen puesta en cola exitosamente con ID:", result.runId);
             return result.runId; // Devuelve el ID de ejecución
