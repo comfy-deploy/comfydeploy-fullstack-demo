@@ -1,5 +1,9 @@
 import fetch from "node-fetch";
 
+type MakeResponse = {
+    prompt: string; // Define la estructura esperada de la respuesta aquí
+};
+
 async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt...");
 
@@ -16,12 +20,17 @@ async function promptOptimizer(prompt: string): Promise<string> {
             throw new Error(`Error en la solicitud: ${response.statusText}`);
         }
 
-        const result = (await response.json()) as { prompt: string };
-        console.log("Prompt optimizado:", result.prompt);
-        return result.prompt;
+        // Usa el tipo MakeResponse para que TypeScript reconozca la estructura del JSON
+        const result = (await response.json()) as MakeResponse;
+        console.log("Respuesta completa de Make:", JSON.stringify(result, null, 2));
+
+        const optimizedPrompt = result.prompt;
+        console.log("Prompt optimizado:", optimizedPrompt);
+
+        return optimizedPrompt || prompt; // Retorna el prompt optimizado o el original si falla
     } catch (error) {
         console.error("Error optimizando el prompt:", error);
-        return prompt; // Si hay un error, devuelve el prompt original
+        return prompt; // En caso de error, retorna el prompt original
     }
 }
 
