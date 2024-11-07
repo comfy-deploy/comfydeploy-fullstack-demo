@@ -4,6 +4,38 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
+import fetch from "node-fetch";
+
+// Define el tipo para la respuesta de OpenAI
+interface OpenAIResponse {
+    choices: { message: { content: string } }[];
+}
+
+// Función para optimizar el prompt usando el assistant de ChatGPT
+async function optimizePrompt(prompt: string): Promise<string> {
+    console.log("Optimizing prompt with assistant...");
+
+    try {
+        const response = await fetch(`https://api.openai.com/v1/assistants/asst_zpQUmdKpyGW2WqXbWXRmBNn7/generate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({ input: prompt })
+        });
+
+        // Fuerza el tipo de `result` a `OpenAIResponse`
+        const result = await response.json() as OpenAIResponse;
+        const optimizedPrompt = result.choices[0]?.message?.content || prompt;
+
+        console.log("Optimized prompt:", optimizedPrompt);
+        return optimizedPrompt;
+    } catch (error) {
+        console.error("Error optimizing prompt:", error);
+        return prompt; // Si hay un error, retorna el prompt original
+    }
+}
 
 // Función principal para generar la imagen con un prompt dado
 export async function generateImage(prompt: string) {
@@ -24,9 +56,12 @@ export async function generateImage(prompt: string) {
     const endpoint = `https://${host}`;
     console.log("Endpoint de webhook:", endpoint);
 
+    // Optimiza el prompt antes de enviarlo a ComfyDeploy
+    const optimizedPrompt = await optimizePrompt(prompt);
+
     // Configura los inputs como un objeto plano de tipo Record<string, string>
     const inputs: Record<string, string> = {
-        input_text: prompt,
+        input_text: optimizedPrompt,
         batch: "1",
         width: "832",
         height: "1216",
@@ -49,7 +84,7 @@ export async function generateImage(prompt: string) {
             })
         });
 
-        const result = await response.json();
+        const result = await response.json() as { run_id: string };
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
         // Si la cola de la generación es exitosa, guarda la información en la base de datos
