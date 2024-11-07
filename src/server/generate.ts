@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
-import promptOptimizer from "../app/api/webhook/promptOptimizer";
+import promptOptimizer from "../app/api/webhook/promptOptimizer"; // Usando Make para optimización del prompt
 
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt:", prompt);
@@ -19,6 +19,7 @@ export async function generateImage(prompt: string) {
     const host = headersList.get("host") || "";
     const endpoint = `https://${host}`;
 
+    // Optimización del prompt usando Make
     const optimizedPrompt = await promptOptimizer(prompt);
     if (!optimizedPrompt) {
         console.error("Error: prompt optimizado es undefined o vacío");
@@ -47,15 +48,17 @@ export async function generateImage(prompt: string) {
             })
         });
 
+        // Manejo especial para el error 504 (Gateway Timeout)
         if (response.status === 504) {
             console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
-            return "504-ignored"; // Devuelve un identificador especial para ignorar este error
+            return "504-ignored"; // Devuelve un identificador especial para indicar que el 504 fue ignorado
         }
 
         const result = await response.json();
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
-        if (response.ok && result.run_id) {
+        // Verificación de que la respuesta contiene `run_id`
+        if (response.ok && result && typeof result === "object" && "run_id" in result) {
             await db.insert(runs).values({
                 run_id: result.run_id,
                 user_id: userId,
@@ -66,7 +69,11 @@ export async function generateImage(prompt: string) {
             console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
         }
     } catch (error) {
-        console.error("Error al llamar a la API de ComfyDeploy:", error);
+        if (error instanceof Error) {
+            console.error("Error al llamar a la API de ComfyDeploy:", error.message);
+        } else {
+            console.error("Error desconocido al llamar a la API de ComfyDeploy:", error);
+        }
     }
 
     return undefined;
