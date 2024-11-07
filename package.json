@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others --prefix none \"cross-env PORT=3006 next dev --turbo\" \"cross-env PORT=3006 bun run localtunnel.mjs\"",    "predev": "bun run pre-dev.ts",
+    "dev": "concurrently --kill-others --prefix none \"cross-env PORT=3006 next dev --turbo\" \"cross-env PORT=3006 bun run localtunnel.mjs\"",
+    "predev": "bun run pre-dev.ts",
     "prebuild": "bun run pre-build.ts",
     "postbuild": "bun run post-build.ts",
     "build": "next build",
@@ -36,6 +37,7 @@
     "lucide-react": "^0.378.0",
     "next": "rc",
     "next-themes": "^0.3.0",
+    "node-fetch": "^3.3.2",
     "react": "rc",
     "react-dom": "rc",
     "react-hook-form": "^7.51.3",
@@ -49,6 +51,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/node-fetch": "^2.6.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
