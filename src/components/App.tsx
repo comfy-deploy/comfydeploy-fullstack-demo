@@ -19,26 +19,31 @@ export function App() {
     const [runId, setRunId] = useState<string | null>(null);
 
     const handleGenerate = async () => {
-        setIsGenerating(true);
-
-        try {
-            const generatedRunId = await generateImage(prompt);
-            if (generatedRunId && generatedRunId !== "504-ignored") {
-                toast.success("Image generation started!");
-                setRunId(generatedRunId);
-                mutate("userRuns");
-            } else if (generatedRunId === "504-ignored") {
-                console.warn("504 Gateway Timeout ignored.");
-            } else {
-                toast.error("Failed to start image generation.");
-            }
-        } catch (error) {
-            console.error("Error generating image:", error);
-            toast.error("An error occurred while generating the image.");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
+		setIsGenerating(true);
+	
+		try {
+			const generatedRunId = await generateImage(prompt);
+			if (generatedRunId === "504-ignored") {
+				console.warn("504 Gateway Timeout ignorado.");
+			} else if (generatedRunId) {
+				toast.success("Image generation started!");
+				setRunId(generatedRunId);
+				mutate("userRuns"); // Actualiza la lista de imágenes generadas
+			} else {
+				toast.error("Failed to start image generation.");
+			}
+		} catch (error) {
+			const err = error as Error; // Asegura que `error` sea tratado como `Error`
+			if (err.message.includes("504")) {
+				console.warn("504 Gateway Timeout ignorado.");
+			} else {
+				console.error("Error generating image:", err);
+				toast.error("An error occurred while generating the image.");
+			}
+		} finally {
+			setIsGenerating(false);
+		}
+	};	
 
     useEffect(() => {
         if (runId) {
