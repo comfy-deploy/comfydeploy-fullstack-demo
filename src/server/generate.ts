@@ -26,20 +26,21 @@ export async function generateImage(prompt: string) {
     console.log("Endpoint de webhook:", endpoint);
 
     // Optimiza el prompt antes de enviarlo a ComfyDeploy
-    const optimizedPrompt = await promptOptimizer(prompt);
-
-    // Configura los inputs como un objeto plano de tipo Record<string, string>
-    const inputs: Record<string, string> = {
-        input_text: optimizedPrompt, // Usa el prompt optimizado
-        batch: "1",
-        width: "832",
-        height: "1216",
-        id: ""
-    };
-    console.log("Inputs configurados para ComfyDeploy:", inputs);
-
-    // Llama a la API de ComfyDeploy para poner en cola la generación de la imagen
     try {
+        const optimizedPrompt = await promptOptimizer(prompt);
+        console.log("Prompt optimizado recibido en generateImage:", optimizedPrompt);
+
+        // Configura los inputs como un objeto plano de tipo Record<string, string>
+        const inputs: Record<string, string> = {
+            input_text: optimizedPrompt, // Usa el prompt optimizado
+            batch: "1",
+            width: "832",
+            height: "1216",
+            id: ""
+        };
+        console.log("Inputs configurados para ComfyDeploy:", inputs);
+
+        // Llama a la API de ComfyDeploy para poner en cola la generación de la imagen
         const response = await fetch("https://www.comfydeploy.com/api/run", {
             method: "POST",
             headers: {
@@ -53,11 +54,16 @@ export async function generateImage(prompt: string) {
             })
         });
 
+        if (!response.ok) {
+            console.error("Error en la respuesta de ComfyDeploy:", response.status, response.statusText);
+            throw new Error(`Error en ComfyDeploy: ${response.status} ${response.statusText}`);
+        }
+
         const result = await response.json();
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
         // Si la cola de la generación es exitosa, guarda la información en la base de datos
-        if (response.ok && result.run_id) {
+        if (result && result.run_id) {
             await db.insert(runs).values({
                 run_id: result.run_id,
                 user_id: userId,
@@ -66,10 +72,11 @@ export async function generateImage(prompt: string) {
             console.log("Imagen puesta en cola exitosamente con ID:", result.run_id);
             return result.run_id; // Devuelve el ID de ejecución
         } else {
-            console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
+            console.error("Error: No se recibió un resultado de generación válido.");
         }
     } catch (error) {
-        console.error("Error al llamar a la API de ComfyDeploy:", error);
+        console.error("Error en el proceso de generación de imagen:", error);
+        throw new Error(`Error generando la imagen: ${error}`);
     }
 
     return undefined; // En caso de falla, devuelve undefined
@@ -86,6 +93,11 @@ export async function checkStatus(run_id: string) {
                 "Authorization": `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`
             }
         });
+
+        if (!response.ok) {
+            console.error("Error en la respuesta de ComfyDeploy (status check):", response.status, response.statusText);
+            throw new Error(`Error en ComfyDeploy (status check): ${response.status} ${response.statusText}`);
+        }
 
         const result = await response.json();
         console.log("Estado de la generación obtenido:", result);
