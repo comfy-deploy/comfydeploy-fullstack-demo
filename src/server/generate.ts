@@ -12,6 +12,11 @@ const client = new ComfyDeploy({
     bearer: process.env.COMFY_DEPLOY_API_KEY,
 });
 
+// Interfaz para la respuesta del assistant de OpenAI
+interface OpenAIResponse {
+    choices: { message: { content: string } }[];
+}
+
 // Función para optimizar el prompt usando el assistant de ChatGPT
 async function optimizePrompt(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
@@ -26,10 +31,18 @@ async function optimizePrompt(prompt: string): Promise<string> {
         })
     });
 
-    const result: any = await response.json(); // Cambiado a `any`
-    const optimizedPrompt = result.choices[0]?.message?.content || prompt;
-    console.log("Optimized prompt:", optimizedPrompt);
-    return optimizedPrompt;
+    const result = (await response.json()) as unknown;
+
+    // Verificación de tipo para asegurarnos de que `result` tenga la estructura de OpenAIResponse
+    if (typeof result === "object" && result !== null && "choices" in result) {
+        const openAIResponse = result as OpenAIResponse;
+        const optimizedPrompt = openAIResponse.choices[0]?.message?.content || prompt;
+        console.log("Optimized prompt:", optimizedPrompt);
+        return optimizedPrompt;
+    } else {
+        console.warn("Unexpected response structure from OpenAI, returning original prompt.");
+        return prompt;
+    }
 }
 
 // Función principal para generar la imagen con un prompt dado
@@ -65,7 +78,7 @@ export async function generateImage(prompt: string) {
 
     // Llama a la API de ComfyDeploy para poner en cola la generación de la imagen
     try {
-        const result: any = await client.run.queue({ // Cambiado a `any`
+        const result: { runId: string } = await client.run.queue({
             deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
             webhook: `${endpoint}/api/webhook`, // URL del webhook para recibir actualizaciones
             inputs: inputs,
