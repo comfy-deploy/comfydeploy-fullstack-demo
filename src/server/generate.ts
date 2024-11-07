@@ -73,6 +73,7 @@ export async function generateImage(prompt: string) {
         batch: "1",
         width: "832",
         height: "1216",
+		id:"",
     };
     console.log("Inputs configurados para ComfyDeploy:", inputs);
 
