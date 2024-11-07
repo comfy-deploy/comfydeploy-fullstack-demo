@@ -47,6 +47,11 @@ export async function generateImage(prompt: string) {
             })
         });
 
+        if (response.status === 504) {
+            console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
+            return "504-ignored"; // Devuelve un identificador especial para ignorar este error
+        }
+
         const result = await response.json();
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
