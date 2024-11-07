@@ -6,26 +6,26 @@ import { z } from "zod";
 
 // Esquema personalizado para los datos entrantes del webhook
 const WebhookSchema = z.object({
-  status: z.string(),
-  run_id: z.string().optional(),
-  live_status: z.union([z.string(), z.null()]).optional(),
-  outputs: z.array(
-    z.object({
-      id: z.string(),
-      run_id: z.string(),
-      created_at: z.string(),
-      updated_at: z.string(),
-      data: z.object({
-        images: z.array(
-          z.object({
-            url: z.string(),
-            type: z.string(),
-            filename: z.string(),
-          })
-        )
-      })
-    })
-  ).optional(),
+    status: z.string(),
+    run_id: z.string().optional(),
+    live_status: z.union([z.string(), z.null()]).optional(),
+    outputs: z.array(
+        z.object({
+            id: z.string(),
+            run_id: z.string(),
+            created_at: z.string(),
+            updated_at: z.string(),
+            data: z.object({
+                images: z.array(
+                    z.object({
+                        url: z.string(),
+                        type: z.string(),
+                        filename: z.string(),
+                    })
+                )
+            })
+        })
+    ).optional(),
 });
 
 export async function POST(request: Request) {
@@ -35,15 +35,13 @@ export async function POST(request: Request) {
         const jsonData = await request.json();
         console.log("Received JSON data:", JSON.stringify(jsonData, null, 2));
 
-        // Si `Make` devuelve comillas simples, podemos intentar convertirlas a comillas dobles
+        // Intentamos reemplazar comillas simples por dobles si es necesario
         const jsonString = JSON.stringify(jsonData).replace(/'/g, '"');
         const cleanData = JSON.parse(jsonString);
 
-        // Parsing the incoming data to ensure it matches the expected schema
         const parseData = WebhookSchema.safeParse(cleanData);
         console.log("Parse result:", parseData);
 
-        // If parsing fails, log the errors and respond with a 400 status code
         if (!parseData.success) {
             console.error("Error in webhook data:", parseData.error.format());
             return NextResponse.json({ message: "Error in webhook data", details: parseData.error.issues }, { status: 400 });
@@ -51,22 +49,21 @@ export async function POST(request: Request) {
 
         const { status, run_id, outputs, live_status } = parseData.data;
 
-        // Manejo de estados intermedios
         if (!run_id) {
             console.warn("No run_id found in webhook data, ignoring this entry.");
             return NextResponse.json({ message: "ignored due to missing run_id" }, { status: 200 });
         }
 
-        if (status === "queued" || status === "started" || status === "uploading") {
-            console.log(`Status is ${status}, no outputs or image data yet, waiting for more data for run_id ${run_id}.`);
-            return NextResponse.json({ message: `Status is ${status}, no outputs yet` }, { status: 200 });
+        // Manejar estados intermedios sin actualizar la base de datos
+        if (["queued", "started", "uploading"].includes(status)) {
+            console.log(`Estado '${status}' recibido para run_id ${run_id}, esperando a que sea 'success' para actualizar la base de datos.`);
+            return NextResponse.json({ message: `Status '${status}', no outputs yet` }, { status: 200 });
         }
 
-        // Si el estado es "success" y hay `outputs`, procedemos a actualizar la base de datos
+        // Procesa solo si el estado es "success" y contiene outputs
         if (status === "success" && outputs && outputs.length > 0) {
             const imageData = outputs[0].data.images[0];
             
-            // Verificamos que `imageData` contenga una propiedad `url`
             if (imageData && typeof imageData === "object" && "url" in imageData) {
                 const imageUrl = imageData.url;
                 
