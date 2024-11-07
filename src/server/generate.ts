@@ -1,37 +1,91 @@
-"use server";
-
+import fetch from "node-fetch";
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
-import promptOptimizer from "../app/api/webhook/promptOptimizer";
 
+// Configuración del cliente para optimización del prompt
+interface OpenAIResponse {
+    choices: { message: { content: string } }[];
+}
+
+interface ComfyDeployResponse {
+    run_id?: string;
+}
+
+// Función para optimizar el prompt usando OpenAI API
+async function optimizePrompt(prompt: string): Promise<string> {
+    console.log("Optimizing prompt with assistant...");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 segundos de tiempo de espera
+
+    try {
+        const response = await fetch(`https://api.openai.com/v1/assistants/asst_zpQUmdKpyGW2WqXbWXRmBNn7/generate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({ input: prompt }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+            console.warn(`Error in OpenAI API response: ${response.statusText}`);
+            return prompt; // Devuelve el prompt original si hay un error
+        }
+
+        const result = (await response.json()) as OpenAIResponse;
+
+        if (result && result.choices?.[0]?.message?.content) {
+            const optimizedPrompt = result.choices[0].message.content;
+            console.log("Optimized prompt:", optimizedPrompt);
+            return optimizedPrompt;
+        } else {
+            console.warn("Unexpected structure from OpenAI, returning original prompt.");
+            return prompt;
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.name === "AbortError") {
+                console.error("Optimize prompt request timed out.");
+            } else {
+                console.error("Error in optimizePrompt:", error.message);
+            }
+        } else {
+            console.error("Unknown error in optimizePrompt:", error);
+        }
+        return prompt; // Retorna el prompt original en caso de error o timeout
+    }
+}
+
+// Función principal para generar la imagen
 export async function generateImage(prompt: string) {
-    console.log("Iniciando generación de imagen con prompt:", prompt);
-
     const { userId } = auth();
     if (!userId) {
-        console.error("Error: Usuario no autenticado");
-        throw new Error("User not found");
+        throw new Error("User not authenticated");
     }
 
     const headersList = await headers();
     const host = headersList.get("host") || "";
     const endpoint = `https://${host}`;
 
-    const optimizedPrompt = await promptOptimizer(prompt);
-    if (!optimizedPrompt) {
-        console.error("Error: prompt optimizado es undefined o vacío");
-        return undefined;
-    }
+    // Optimizar el prompt antes de enviarlo
+    const optimizedPrompt = await optimizePrompt(prompt);
 
-    const inputs: Record<string, string> = {
+    const inputs = {
         input_text: optimizedPrompt,
         batch: "1",
         width: "832",
         height: "1216",
         id: ""
     };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout para ComfyDeploy
 
     try {
         const response = await fetch("https://www.comfydeploy.com/api/run", {
@@ -44,30 +98,44 @@ export async function generateImage(prompt: string) {
                 deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
                 inputs: inputs,
                 webhook: `${endpoint}/api/webhook`
-            })
+            }),
+            signal: controller.signal
         });
 
-        if (response.status === 504) {
-            console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
-            return "504-ignored"; // Devuelve un identificador especial para ignorar este error
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+            if (response.status === 504) {
+                console.warn("504 Gateway Timeout ignored.");
+                return "504-ignored"; // Indicar que el 504 fue ignorado
+            }
+            throw new Error(`Unexpected response from ComfyDeploy: ${response.statusText}`);
         }
 
-        const result = await response.json();
-        console.log("Resultado de la llamada a ComfyDeploy:", result);
+        const result = (await response.json()) as ComfyDeployResponse;
 
-        if (response.ok && result.run_id) {
+        if (result && result.run_id) {
             await db.insert(runs).values({
                 run_id: result.run_id,
                 user_id: userId,
                 inputs: inputs
             });
+            console.log("Image queued successfully with run ID:", result.run_id);
             return result.run_id;
         } else {
-            console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
+            console.error("No valid run_id received.");
+            return undefined;
         }
     } catch (error) {
-        console.error("Error al llamar a la API de ComfyDeploy:", error);
+        if (error instanceof Error) {
+            if (error.name === "AbortError") {
+                console.error("generateImage request timed out.");
+            } else {
+                console.error("Error in generateImage:", error.message);
+            }
+        } else {
+            console.error("Unknown error in generateImage:", error);
+        }
+        return undefined;
     }
-
-    return undefined;
 }
