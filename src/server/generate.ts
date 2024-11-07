@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
-import promptOptimizer from "../app/api/webhook/promptOptimizer"; // Importa el optimizador de prompts
+import promptOptimizer from "../app/api/webhook/promptOptimizer"; // Asegúrate de que la ruta sea correcta
 
 // Función principal para generar la imagen con un prompt dado
 export async function generateImage(prompt: string) {
