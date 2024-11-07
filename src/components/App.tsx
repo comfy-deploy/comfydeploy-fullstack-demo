@@ -13,9 +13,7 @@ import { useDebounce } from "use-debounce";
 import { cn } from "@/lib/utils";
 
 export function App() {
-    const [prompt, setPrompt] = useState(
-        "beautiful scenery nature glass bottle landscape, purple galaxy bottle",
-    );
+    const [prompt, setPrompt] = useState("beautiful scenery nature glass bottle landscape, purple galaxy bottle");
     const [debouncedPrompt] = useDebounce(prompt, 200);
     const [isGenerating, setIsGenerating] = useState(false);
     const [runId, setRunId] = useState<string | null>(null);
@@ -25,10 +23,12 @@ export function App() {
 
         try {
             const generatedRunId = await generateImage(prompt);
-            if (generatedRunId) {
+            if (generatedRunId && generatedRunId !== "504-ignored") {
                 toast.success("Image generation started!");
                 setRunId(generatedRunId);
-                mutate("userRuns"); // Actualiza la lista de imágenes generadas
+                mutate("userRuns");
+            } else if (generatedRunId === "504-ignored") {
+                console.warn("504 Gateway Timeout ignored.");
             } else {
                 toast.error("Failed to start image generation.");
             }
@@ -69,10 +69,7 @@ export function App() {
                     />
                     <Button
                         variant="expandIcon"
-                        className={cn(
-                            "rounded-xl transition-all w-[170px] min-w-0 p-0",
-                            isGenerating && "opacity-50 cursor-not-allowed"
-                        )}
+                        className={cn("rounded-xl transition-all w-[170px] min-w-0 p-0", isGenerating && "opacity-50 cursor-not-allowed")}
                         Icon={WandSparklesIcon}
                         iconPlacement="right"
                         onClick={handleGenerate}
