@@ -7,8 +7,8 @@ import { z } from "zod";
 // Esquema personalizado para los datos entrantes del webhook
 const WebhookSchema = z.object({
   status: z.string(),
-  run_id: z.string().optional(),  // Marcar `run_id` como opcional
-  live_status: z.string().optional(),
+  run_id: z.string().optional(),
+  live_status: z.union([z.string(), z.null()]).optional(),
   outputs: z.array(
     z.object({
       id: z.string(),
@@ -35,8 +35,12 @@ export async function POST(request: Request) {
         const jsonData = await request.json();
         console.log("Received JSON data:", JSON.stringify(jsonData, null, 2));
 
+        // Si `Make` devuelve comillas simples, podemos intentar convertirlas a comillas dobles
+        const jsonString = JSON.stringify(jsonData).replace(/'/g, '"');
+        const cleanData = JSON.parse(jsonString);
+
         // Parsing the incoming data to ensure it matches the expected schema
-        const parseData = WebhookSchema.safeParse(jsonData);
+        const parseData = WebhookSchema.safeParse(cleanData);
         console.log("Parse result:", parseData);
 
         // If parsing fails, log the errors and respond with a 400 status code
@@ -47,18 +51,18 @@ export async function POST(request: Request) {
 
         const { status, run_id, outputs, live_status } = parseData.data;
 
-        // Si no hay `run_id`, ignoramos la solicitud en lugar de lanzar un error
+        // Manejo de estados intermedios
         if (!run_id) {
             console.warn("No run_id found in webhook data, ignoring this entry.");
             return NextResponse.json({ message: "ignored due to missing run_id" }, { status: 200 });
         }
 
-        // Si el estado es "queued" o "started" y no tiene `outputs`, solo registramos sin actualizar la base de datos
-        if ((status === "queued" || status === "started") && (!outputs || outputs.length === 0)) {
-            console.log(`Status is ${status} with no outputs, waiting for more data for run_id ${run_id}.`);
+        if (status === "queued" || status === "started" || status === "uploading") {
+            console.log(`Status is ${status}, no outputs or image data yet, waiting for more data for run_id ${run_id}.`);
             return NextResponse.json({ message: `Status is ${status}, no outputs yet` }, { status: 200 });
         }
 
+        // Si el estado es "success" y hay `outputs`, procedemos a actualizar la base de datos
         if (status === "success" && outputs && outputs.length > 0) {
             const imageData = outputs[0].data.images[0];
             
