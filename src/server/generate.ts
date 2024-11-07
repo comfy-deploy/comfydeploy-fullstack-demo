@@ -25,7 +25,7 @@ async function optimizePrompt(prompt: string): Promise<string> {
             body: JSON.stringify({ input: prompt })
         });
 
-        // Fuerza el tipo de `result` a `OpenAIResponse`
+        // Asegúrate de que la respuesta sea del tipo `OpenAIResponse`
         const result = await response.json() as OpenAIResponse;
         const optimizedPrompt = result.choices[0]?.message?.content || prompt;
 
