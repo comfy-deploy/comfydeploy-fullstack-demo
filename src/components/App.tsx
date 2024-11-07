@@ -3,16 +3,14 @@
 import { ImageGenerationResult } from "@/components/ImageGenerationResult";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { generateImage } from "@/server/generate";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { WandSparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { mutate } from "swr";
 import { useDebounce } from "use-debounce";
 import { cn } from "@/lib/utils";
-import { Badge } from "./ui/badge";
 
 export function App() {
     const [prompt, setPrompt] = useState(
@@ -20,14 +18,16 @@ export function App() {
     );
     const [debouncedPrompt] = useDebounce(prompt, 200);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [runId, setRunId] = useState<string | null>(null);
 
     const handleGenerate = async () => {
-        setIsGenerating(true); // Inicia el estado de generación
+        setIsGenerating(true);
 
         try {
-            const runId = await generateImage(prompt);
-            if (runId) {
+            const generatedRunId = await generateImage(prompt);
+            if (generatedRunId) {
                 toast.success("Image generation started!");
+                setRunId(generatedRunId);
                 mutate("userRuns"); // Actualiza la lista de imágenes generadas
             } else {
                 toast.error("Failed to start image generation.");
@@ -36,9 +36,25 @@ export function App() {
             console.error("Error generating image:", error);
             toast.error("An error occurred while generating the image.");
         } finally {
-            setIsGenerating(false); // Finaliza el estado de generación
+            setIsGenerating(false);
         }
     };
+
+    useEffect(() => {
+        if (runId) {
+            const interval = setInterval(async () => {
+                const response = await fetch(`/api/status/${runId}`);
+                const result = await response.json();
+
+                if (result.image_url) {
+                    mutate("userRuns");
+                    clearInterval(interval); // Detén el polling cuando la imagen esté disponible
+                }
+            }, 5000);
+
+            return () => clearInterval(interval);
+        }
+    }, [runId]);
 
     return (
         <div className="fixed z-50 bottom-0 md:bottom-2 flex flex-col gap-2 w-full md:max-w-lg mx-auto">
@@ -60,7 +76,7 @@ export function App() {
                         Icon={WandSparklesIcon}
                         iconPlacement="right"
                         onClick={handleGenerate}
-                        disabled={isGenerating} // Desactiva el botón mientras está en generación
+                        disabled={isGenerating}
                     >
                         {isGenerating ? "Generating..." : "Generate"}
                     </Button>

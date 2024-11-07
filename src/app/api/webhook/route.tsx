@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// Esquema personalizado para los datos entrantes del webhook
 const WebhookSchema = z.object({
     status: z.string(),
     run_id: z.string().optional(),
@@ -29,19 +28,10 @@ const WebhookSchema = z.object({
 });
 
 export async function POST(request: Request) {
-    console.log("Receiving webhook data...");
-
     try {
         const jsonData = await request.json();
-        console.log("Received JSON data:", JSON.stringify(jsonData, null, 2));
 
-        // Intentamos reemplazar comillas simples por dobles si es necesario
-        const jsonString = JSON.stringify(jsonData).replace(/'/g, '"');
-        const cleanData = JSON.parse(jsonString);
-
-        const parseData = WebhookSchema.safeParse(cleanData);
-        console.log("Parse result:", parseData);
-
+        const parseData = WebhookSchema.safeParse(jsonData);
         if (!parseData.success) {
             console.error("Error in webhook data:", parseData.error.format());
             return NextResponse.json({ message: "Error in webhook data", details: parseData.error.issues }, { status: 400 });
@@ -54,22 +44,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: "ignored due to missing run_id" }, { status: 200 });
         }
 
-        // Manejar estados intermedios sin actualizar la base de datos
-        if (["queued", "started", "uploading"].includes(status)) {
-            console.log(`Estado '${status}' recibido para run_id ${run_id}, esperando a que sea 'success' para actualizar la base de datos.`);
-            return NextResponse.json({ message: `Status '${status}', no outputs yet` }, { status: 200 });
+        if (status === "queued" || status === "started" || status === "uploading") {
+            console.log(`Status is ${status}, no outputs or image data yet, waiting for more data for run_id ${run_id}.`);
+            return NextResponse.json({ message: `Status is ${status}, no outputs yet` }, { status: 200 });
         }
 
-        // Procesa solo si el estado es "success" y contiene outputs
         if (status === "success" && outputs && outputs.length > 0) {
             const imageData = outputs[0].data.images[0];
-            
             if (imageData && typeof imageData === "object" && "url" in imageData) {
                 const imageUrl = imageData.url;
-                
-                console.log("Updating database for run ID:", run_id);
-                console.log("Image URL:", imageUrl);
-                console.log("Live Status:", live_status ?? "unknown");
 
                 await db
                     .update(runs)
