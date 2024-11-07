@@ -7,8 +7,8 @@ import { z } from "zod";
 // Esquema personalizado para los datos entrantes del webhook
 const WebhookSchema = z.object({
   status: z.string(),
-  runId: z.string(),
-  liveStatus: z.string().optional(),
+  run_id: z.string().optional(),  // Marcar `run_id` como opcional
+  live_status: z.string().optional(),
   outputs: z.array(
     z.object({
       id: z.string(),
@@ -25,7 +25,7 @@ const WebhookSchema = z.object({
         )
       })
     })
-  ),
+  ).optional(),
 });
 
 export async function POST(request: Request) {
@@ -42,42 +42,50 @@ export async function POST(request: Request) {
         // If parsing fails, log the errors and respond with a 400 status code
         if (!parseData.success) {
             console.error("Error in webhook data:", parseData.error.format());
-            return NextResponse.json({ message: "error en los datos del webhook", details: parseData.error.issues }, { status: 400 });
+            return NextResponse.json({ message: "Error in webhook data", details: parseData.error.issues }, { status: 400 });
         }
 
-        // If parsing is successful, proceed with processing the data
-        const { status, runId, outputs, liveStatus } = parseData.data;
-        console.log("Webhook parsed data:", { status, runId, liveStatus });
+        const { status, run_id, outputs, live_status } = parseData.data;
 
-        if (status === "success") {
-            const imageData = outputs[0]?.data?.images[0];
+        // Si no hay `run_id`, ignoramos la solicitud en lugar de lanzar un error
+        if (!run_id) {
+            console.warn("No run_id found in webhook data, ignoring this entry.");
+            return NextResponse.json({ message: "ignored due to missing run_id" }, { status: 200 });
+        }
+
+        // Si el estado es "queued" o "started" y no tiene `outputs`, solo registramos sin actualizar la base de datos
+        if ((status === "queued" || status === "started") && (!outputs || outputs.length === 0)) {
+            console.log(`Status is ${status} with no outputs, waiting for more data for run_id ${run_id}.`);
+            return NextResponse.json({ message: `Status is ${status}, no outputs yet` }, { status: 200 });
+        }
+
+        if (status === "success" && outputs && outputs.length > 0) {
+            const imageData = outputs[0].data.images[0];
             
-            // Check if imageData contains a 'url' property
+            // Verificamos que `imageData` contenga una propiedad `url`
             if (imageData && typeof imageData === "object" && "url" in imageData) {
                 const imageUrl = imageData.url;
                 
-                // Logging before updating the database
-                console.log("Updating database for run ID:", runId);
+                console.log("Updating database for run ID:", run_id);
                 console.log("Image URL:", imageUrl);
-                console.log("Live Status:", liveStatus ?? "unknown");
+                console.log("Live Status:", live_status ?? "unknown");
 
-                // Update the database with the new image URL and live status for the given run ID
                 await db
                     .update(runs)
                     .set({
                         image_url: imageUrl,
-                        live_status: liveStatus ?? "unknown", // Usa un valor por defecto si liveStatus está ausente
+                        live_status: live_status ?? "unknown",
                     })
-                    .where(eq(runs.run_id, runId));
-                console.log("Database updated successfully for run ID:", runId);
+                    .where(eq(runs.run_id, run_id));
+                
+                console.log("Database updated successfully for run ID:", run_id);
             } else {
-                console.warn("No valid image data found in outputs.");
+                console.warn("No valid image data found in outputs for run_id:", run_id);
             }
         } else {
-            console.log("Status is not 'success', skipping database update.");
+            console.log("Status is not 'success' or no outputs found, skipping database update.");
         }
 
-        console.log("Webhook processing completed.");
         return NextResponse.json({ message: "success" }, { status: 200 });
     } catch (error) {
         console.error("Error processing webhook:", error);
