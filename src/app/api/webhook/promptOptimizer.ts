@@ -17,7 +17,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
         }
 
         const responseText = await response.text();
-        
+
         let result;
         try {
             result = JSON.parse(responseText); // Intentamos convertir la respuesta a JSON
@@ -29,25 +29,16 @@ async function promptOptimizer(prompt: string): Promise<string> {
 
         console.log("Respuesta completa de Make:", result);
 
-        // Verificamos si tenemos el objeto 'choices' con el 'message'
-        if (result?.choices?.[0]?.message) {
-            const messageObject = result.choices[0].message;
-            console.log("Message object received:", JSON.stringify(messageObject)); // Log del objeto message como string
+        // Verificamos si la respuesta tiene el campo 'content' directamente dentro de 'choices'
+        const optimizedPrompt = result?.choices?.[0]?.content;
 
-            // Si 'content' existe en el objeto 'message'
-            if (messageObject?.content) {
-                const optimizedPrompt = messageObject.content;
-                console.log("Optimized prompt:", optimizedPrompt);
-                return optimizedPrompt;
-            } else {
-                console.warn("No 'content' found in message.");
-            }
+        if (optimizedPrompt) {
+            console.log("Optimized prompt:", optimizedPrompt);
+            return optimizedPrompt;
         } else {
-            console.warn("No 'message' found in the response.");
+            console.warn("content no encontrado en la respuesta de Make.");
+            return prompt; // Retornamos el prompt original si 'content' no está disponible
         }
-
-        // En caso de no encontrar 'content', devolvemos el prompt original
-        return prompt;
     } catch (error) {
         console.error("Error optimizing the prompt:", error);
         return prompt; // Si ocurre un error, devolvemos el prompt original
