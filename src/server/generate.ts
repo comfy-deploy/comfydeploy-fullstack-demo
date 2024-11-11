@@ -5,20 +5,17 @@ import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 
-// Función para optimizar el prompt usando el asistente de OpenAI (Make)
+// Función para optimizar el prompt usando Make
 async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
 
     try {
-        const response = await fetch(`https://api.openai.com/v1/assistants/asst_zpQUmdKpyGW2WqXbWXRmBNn7/generate`, {
+        const response = await fetch(`https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                input: prompt
-            })
+            body: JSON.stringify({ prompt })
         });
 
         if (!response.ok) {
@@ -28,18 +25,19 @@ async function promptOptimizer(prompt: string): Promise<string> {
         const result = await response.json();
         console.log("Respuesta completa de Make:", result);
 
-        // Comprobamos la estructura para obtener el contenido del mensaje
-        if (result?.choices?.[0]?.message?.content) {
-            const optimizedPrompt = result.choices[0].message.content;
+        // Verificamos si la respuesta tiene el campo 'optimizedPrompt'
+        const optimizedPrompt = (result as { optimizedPrompt?: string }).optimizedPrompt;
+
+        if (typeof optimizedPrompt === "string") {
             console.log("Optimized prompt:", optimizedPrompt);
             return optimizedPrompt;
         } else {
             console.warn("optimizedPrompt no encontrado en la respuesta de Make.");
-            return prompt; // Retornamos el prompt original si `optimizedPrompt` no es encontrado
+            return prompt; // Retornamos el prompt original si `optimizedPrompt` no está disponible
         }
     } catch (error) {
         console.error("Error optimizing the prompt:", error);
-        return prompt; // Si ocurre un error, devolvemos el prompt original
+        return prompt; // Si hay un error, devolvemos el prompt original
     }
 }
 

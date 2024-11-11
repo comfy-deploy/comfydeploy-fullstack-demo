@@ -1,5 +1,10 @@
 import fetch from "node-fetch";
 
+// Definimos la interfaz para la respuesta de Make
+interface MakeResponse {
+    optimizedPrompt?: string; // Esto indica que `optimizedPrompt` es opcional
+}
+
 async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt...");
 
@@ -20,32 +25,38 @@ async function promptOptimizer(prompt: string): Promise<string> {
         clearTimeout(timeoutId); // Limpiar el timeout si la respuesta llega a tiempo
 
         if (!response.ok) {
-            throw new Error(`Error en la solicitud: ${response.statusText}`);
+            throw new Error(`Error en la solicitud a Make: ${response.statusText}`);
         }
 
-        // Parseamos la respuesta y verificamos que `optimizedPrompt` esté presente
-        const result = await response.json();
-        console.log("Respuesta completa de Make:", result);
+        // Intentamos parsear la respuesta como JSON y luego verificamos su estructura
+        const result = await response.json().catch((error) => {
+            console.error("Error al parsear la respuesta JSON de Make:", error);
+            throw new Error("Error al parsear la respuesta de Make.");
+        });
 
-        // Verificamos si `optimizedPrompt` existe y es una cadena de texto
-        const optimizedPrompt = (result as { optimizedPrompt?: string }).optimizedPrompt;
+        // Comprobamos que la respuesta tenga la estructura correcta
+        if (result && typeof result === "object" && "choices" in result && Array.isArray(result.choices)) {
+            const optimizedPrompt = result.choices[0]?.message?.content;
 
-        if (typeof optimizedPrompt !== "string") {
-            console.error("optimizedPrompt no encontrado en la respuesta de Make o no es un string");
-            return prompt; // Retornamos el prompt original si `optimizedPrompt` es undefined o no es string
+            if (typeof optimizedPrompt === "string") {
+                console.log("Optimized prompt:", optimizedPrompt);
+                return optimizedPrompt;
+            } else {
+                console.warn("optimizedPrompt no encontrado o no es una cadena de texto.");
+            }
+        } else {
+            console.warn("La respuesta no tiene la estructura esperada.");
         }
 
-        console.log("Prompt optimizado:", optimizedPrompt);
-        return optimizedPrompt;
+        return prompt; // Si la respuesta no tiene el formato esperado, devolvemos el prompt original
     } catch (error) {
         if ((error as Error).name === "AbortError") {
             console.error("Error: La solicitud de optimización de prompt fue abortada por tiempo de espera.");
         } else {
             console.error("Error optimizando el prompt:", (error as Error).message);
         }
-        return prompt; // Si hay un error, devuelve el prompt original
+        return prompt; // Si hay un error, devolvemos el prompt original
     }
 }
 
 export default promptOptimizer;
-
