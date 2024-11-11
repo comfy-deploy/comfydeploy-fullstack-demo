@@ -32,10 +32,10 @@ async function promptOptimizer(prompt: string): Promise<string> {
         // Verificamos si tenemos el objeto 'choices' con el 'message'
         if (result?.choices?.[0]?.message) {
             const messageObject = result.choices[0].message;
-            console.log("Message object received:", messageObject); // Log del objeto message
+            console.log("Message object received:", JSON.stringify(messageObject)); // Log del objeto message como string
 
             // Si 'content' existe en el objeto 'message'
-            if (messageObject.content) {
+            if (messageObject?.content) {
                 const optimizedPrompt = messageObject.content;
                 console.log("Optimized prompt:", optimizedPrompt);
                 return optimizedPrompt;
