@@ -20,9 +20,16 @@ export async function generateImage(prompt: string) {
     const endpoint = `https://${host}`;
 
     // Optimización del prompt usando Make
-    const optimizedPrompt = await promptOptimizer(prompt);
-    if (!optimizedPrompt) {
-        console.error("Error: prompt optimizado es undefined o vacío");
+    let optimizedPrompt = prompt;
+    try {
+        optimizedPrompt = await promptOptimizer(prompt); // Intentamos optimizar el prompt
+        if (!optimizedPrompt) {
+            console.error("Error: prompt optimizado es undefined o vacío");
+            return undefined;
+        }
+    } catch (error) {
+        console.error("Error optimizando el prompt:", error);
+        // Retornamos el prompt original si ocurre un error
         return undefined;
     }
 
@@ -54,11 +61,19 @@ export async function generateImage(prompt: string) {
             return "504-ignored"; // Devuelve un identificador especial para indicar que el 504 fue ignorado
         }
 
-        const result = await response.json();
+        let result;
+        try {
+            // Intentamos parsear el JSON solo si la respuesta es válida
+            result = await response.json();
+        } catch (jsonError) {
+            console.error("Error al parsear JSON de la respuesta:", jsonError);
+            return undefined; // Si la respuesta no es JSON, retornamos undefined
+        }
+
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
         // Verificación de que la respuesta contiene `run_id`
-        if (response.ok && result && typeof result === "object" && "run_id" in result) {
+        if (response.ok && result && "run_id" in result) {
             await db.insert(runs).values({
                 run_id: result.run_id,
                 user_id: userId,
