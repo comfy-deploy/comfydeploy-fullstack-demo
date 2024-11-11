@@ -26,27 +26,24 @@ async function promptOptimizer(prompt: string): Promise<string> {
         const result = await response.json();
         console.log("Respuesta completa de Make:", result);
 
-        // Verificamos si la respuesta tiene el campo 'content' directamente dentro de 'choices'
         const optimizedPrompt = result?.choices?.[0]?.content;
-
         if (optimizedPrompt) {
             console.log("Optimized prompt:", optimizedPrompt);
             return optimizedPrompt;
         } else {
             console.warn("Content no encontrado en la respuesta de Make. Usando prompt original.");
-            return prompt; // Retornamos el prompt original si 'content' no está disponible
+            return prompt;
         }
-    } catch (error) {
-        console.error("Error optimizing the prompt:", error);
-        return prompt; // Si ocurre un error, devolvemos el prompt original
+    } catch (error: any) { // Especificamos que el tipo de error es `any`
+        console.error("Error optimizing the prompt:", error.message || error);
+        return prompt;
     }
 }
 
-// Función para generar la imagen con el prompt optimizado
+// Función para generar la imagen con el prompt optimizado y un timeout de 30 segundos
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt:", prompt);
 
-    // Verificación de que el usuario esté autenticado
     const { userId } = auth();
     if (!userId) {
         console.error("Error: Usuario no autenticado");
@@ -57,19 +54,20 @@ export async function generateImage(prompt: string) {
     const host = headersList.get("host") || "";
     const endpoint = `https://${host}`;
 
-    // Optimización del prompt usando Make
     const optimizedPrompt = await promptOptimizer(prompt);
-
     const inputs: Record<string, string> = {
         input_text: optimizedPrompt,
         batch: "1",
         width: "832",
         height: "1216",
-        id: "" // Id de la imagen
+        id: ""
     };
 
+    // Configuración de un timeout de 30 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+
     try {
-        // Llamada a la API de ComfyDeploy para poner en cola la generación de la imagen
         const response = await fetch("https://www.comfydeploy.com/api/run", {
             method: "POST",
             headers: {
@@ -80,22 +78,21 @@ export async function generateImage(prompt: string) {
                 deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
                 inputs: inputs,
                 webhook: `${endpoint}/api/webhook`
-            })
+            }),
+            signal: controller.signal // Asigna el controlador de abortos
         });
 
-        // Manejo especial para el error 504 (Gateway Timeout)
+        clearTimeout(timeoutId); // Limpia el timeout si la respuesta llega a tiempo
+
         if (response.status === 504) {
             console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
-            return "504-ignored"; // Devuelve un identificador especial para indicar que el 504 fue ignorado
+            return "504-ignored";
         }
 
-        // Procesamos la respuesta de la API de ComfyDeploy
         const result = await response.json();
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
-        // Verificación de que la respuesta contiene `run_id`
         if (response.ok && result && typeof result === "object" && "run_id" in result) {
-            // Guardamos la información en la base de datos
             await db.insert(runs).values({
                 run_id: result.run_id,
                 user_id: userId,
@@ -108,8 +105,12 @@ export async function generateImage(prompt: string) {
             console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
             throw new Error("Image generation failed: Invalid response");
         }
-    } catch (error) {
-        console.error("Error al llamar a la API de ComfyDeploy:", error);
-        throw new Error("Error generating image"); // Lanzamos el error para que el frontend lo capture y maneje
+    } catch (error: any) { // Especificamos que el tipo de error es `any`
+        if (error.name === "AbortError") {
+            console.error("Error: La solicitud fue cancelada por tiempo de espera.");
+        } else {
+            console.error("Error al llamar a la API de ComfyDeploy:", error.message || error);
+        }
+        throw new Error("Error generating image");
     }
 }
