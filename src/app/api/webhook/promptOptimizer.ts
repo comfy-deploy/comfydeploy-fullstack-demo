@@ -32,17 +32,25 @@ async function promptOptimizer(prompt: string): Promise<string> {
 
         console.log("Respuesta completa de Make:", result);
 
-        // Verificamos si el resultado contiene los datos esperados
-        if (result?.choices?.[0]?.message?.content) {
-            // Accedemos correctamente al contenido del mensaje
+        // Accedemos al objeto 'message' de 'choices' y mostramos su contenido
+        if (result?.choices?.[0]?.message) {
+            console.log("Message object:", result?.choices[0]?.message); // Mostrar el objeto completo 'message'
+
+            // Intentamos acceder al 'content' dentro del 'message'
             const optimizedPrompt = result.choices[0].message.content;
-            console.log("Optimized prompt:", optimizedPrompt);
-            return optimizedPrompt;
+
+            if (optimizedPrompt) {
+                console.log("Optimized prompt:", optimizedPrompt);
+                return optimizedPrompt;
+            } else {
+                console.warn("content no encontrado en el objeto 'message'.");
+            }
         } else {
-            console.warn("optimizedPrompt no encontrado en la respuesta de Make.");
-            console.warn("Message object:", result?.choices?.[0]?.message); // Mostrar el objeto completo
-            return prompt; // Retornamos el prompt original si `optimizedPrompt` no está disponible
+            console.warn("message no encontrado en la respuesta de Make.");
         }
+
+        // Si no encontramos el 'content', devolvemos el prompt original
+        return prompt;
     } catch (error) {
         console.error("Error optimizing the prompt:", error);
         return prompt; // Si hay un error, devolvemos el prompt original
