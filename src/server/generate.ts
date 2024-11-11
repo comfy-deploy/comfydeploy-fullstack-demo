@@ -4,8 +4,44 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
-import promptOptimizer from "../app/api/webhook/promptOptimizer"; // Usando Make para optimización del prompt
 
+// Función para optimizar el prompt usando Make
+async function promptOptimizer(prompt: string): Promise<string> {
+    console.log("Optimizing prompt with assistant...");
+
+    try {
+        const response = await fetch(`https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to optimize prompt: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log("Respuesta completa de Make:", result);
+
+        // Verificamos si la respuesta tiene el campo 'optimizedPrompt'
+        const optimizedPrompt = (result as { optimizedPrompt?: string }).optimizedPrompt;
+
+        if (typeof optimizedPrompt === "string") {
+            console.log("Optimized prompt:", optimizedPrompt);
+            return optimizedPrompt;
+        } else {
+            console.warn("optimizedPrompt no encontrado en la respuesta de Make.");
+            return prompt; // Retornamos el prompt original si `optimizedPrompt` no está disponible
+        }
+    } catch (error) {
+        console.error("Error optimizing the prompt:", error);
+        return prompt; // Si hay un error, devolvemos el prompt original
+    }
+}
+
+// Función para generar la imagen con el prompt optimizado
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt:", prompt);
 
