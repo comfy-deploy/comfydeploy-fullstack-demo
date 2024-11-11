@@ -10,7 +10,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
 
     try {
-        const response = await fetch(`https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc`, {
+        const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -25,7 +25,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
         const result = await response.json();
         console.log("Respuesta completa de Make:", result);
 
-        // Accedemos al contenido optimizado directamente desde 'choices[0].content'
+        // Verificamos si la respuesta tiene el campo 'content' directamente dentro de 'choices'
         const optimizedPrompt = result?.choices?.[0]?.content;
 
         if (optimizedPrompt) {
@@ -104,6 +104,9 @@ export async function generateImage(prompt: string) {
                 user_id: userId,
                 inputs: inputs
             });
+
+            // Aquí puedes agregar lógica adicional para hacer seguimiento de la imagen o mostrarla
+            console.log(`Imagen generada con run_id: ${result.run_id}`);
             return result.run_id;
         } else {
             console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
