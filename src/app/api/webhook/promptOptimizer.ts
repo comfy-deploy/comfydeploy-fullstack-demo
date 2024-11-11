@@ -17,7 +17,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
         }
 
         const responseText = await response.text();
-
+        
         let result;
         try {
             result = JSON.parse(responseText); // Intentamos convertir la respuesta a JSON
