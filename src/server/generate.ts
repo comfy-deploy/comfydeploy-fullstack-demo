@@ -19,7 +19,8 @@ async function promptOptimizer(prompt: string): Promise<string> {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to optimize prompt: ${response.statusText}`);
+            console.error(`Failed to optimize prompt: ${response.statusText}`);
+            return prompt; // Retornamos el prompt original si falla la solicitud
         }
 
         const result = await response.json();
@@ -32,7 +33,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
             console.log("Optimized prompt:", optimizedPrompt);
             return optimizedPrompt;
         } else {
-            console.warn("content no encontrado en la respuesta de Make.");
+            console.warn("Content no encontrado en la respuesta de Make. Usando prompt original.");
             return prompt; // Retornamos el prompt original si 'content' no está disponible
         }
     } catch (error) {
@@ -58,10 +59,6 @@ export async function generateImage(prompt: string) {
 
     // Optimización del prompt usando Make
     const optimizedPrompt = await promptOptimizer(prompt);
-    if (!optimizedPrompt) {
-        console.error("Error: prompt optimizado es undefined o vacío");
-        return undefined;
-    }
 
     const inputs: Record<string, string> = {
         input_text: optimizedPrompt,
@@ -105,19 +102,14 @@ export async function generateImage(prompt: string) {
                 inputs: inputs
             });
 
-            // Aquí puedes agregar lógica adicional para hacer seguimiento de la imagen o mostrarla
             console.log(`Imagen generada con run_id: ${result.run_id}`);
             return result.run_id;
         } else {
             console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
+            throw new Error("Image generation failed: Invalid response");
         }
     } catch (error) {
-        if (error instanceof Error) {
-            console.error("Error al llamar a la API de ComfyDeploy:", error.message);
-        } else {
-            console.error("Error desconocido al llamar a la API de ComfyDeploy:", error);
-        }
+        console.error("Error al llamar a la API de ComfyDeploy:", error);
+        throw new Error("Error generating image"); // Lanzamos el error para que el frontend lo capture y maneje
     }
-
-    return undefined;
 }
