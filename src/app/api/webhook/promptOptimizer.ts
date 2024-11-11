@@ -12,48 +12,45 @@ async function promptOptimizer(prompt: string): Promise<string> {
             body: JSON.stringify({ prompt })
         });
 
-        // Verificamos si la respuesta es exitosa
         if (!response.ok) {
             throw new Error(`Failed to optimize prompt: ${response.statusText}`);
         }
 
-        // Intentamos leer la respuesta como texto
         const responseText = await response.text();
-
-        // Intentamos parsear el texto a JSON
+        
         let result;
         try {
-            result = JSON.parse(responseText);
+            result = JSON.parse(responseText); // Intentamos convertir la respuesta a JSON
         } catch (jsonError) {
             console.error("Error parsing JSON from Make API:", jsonError);
-            console.error("Response body:", responseText); // Muestra el cuerpo completo en caso de error
+            console.error("Response body:", responseText); // Log el cuerpo completo en caso de error
             throw new Error("Invalid JSON response from Make API");
         }
 
         console.log("Respuesta completa de Make:", result);
 
-        // Accedemos al objeto 'message' de 'choices' y mostramos su contenido
+        // Verificamos si tenemos el objeto 'choices' con el 'message'
         if (result?.choices?.[0]?.message) {
-            console.log("Message object:", result?.choices[0]?.message); // Mostrar el objeto completo 'message'
+            const messageObject = result.choices[0].message;
+            console.log("Message object received:", messageObject); // Log del objeto message
 
-            // Intentamos acceder al 'content' dentro del 'message'
-            const optimizedPrompt = result.choices[0].message.content;
-
-            if (optimizedPrompt) {
+            // Si 'content' existe en el objeto 'message'
+            if (messageObject.content) {
+                const optimizedPrompt = messageObject.content;
                 console.log("Optimized prompt:", optimizedPrompt);
                 return optimizedPrompt;
             } else {
-                console.warn("content no encontrado en el objeto 'message'.");
+                console.warn("No 'content' found in message.");
             }
         } else {
-            console.warn("message no encontrado en la respuesta de Make.");
+            console.warn("No 'message' found in the response.");
         }
 
-        // Si no encontramos el 'content', devolvemos el prompt original
+        // En caso de no encontrar 'content', devolvemos el prompt original
         return prompt;
     } catch (error) {
         console.error("Error optimizing the prompt:", error);
-        return prompt; // Si hay un error, devolvemos el prompt original
+        return prompt; // Si ocurre un error, devolvemos el prompt original
     }
 }
 
