@@ -25,19 +25,19 @@ async function promptOptimizer(prompt: string): Promise<string> {
         const result = await response.json();
         console.log("Respuesta completa de Make:", result);
 
-        // Verificamos si la respuesta tiene el campo 'optimizedPrompt'
-        const optimizedPrompt = (result as { optimizedPrompt?: string }).optimizedPrompt;
+        // Accedemos al contenido optimizado directamente desde 'choices[0].content'
+        const optimizedPrompt = result?.choices?.[0]?.content;
 
-        if (typeof optimizedPrompt === "string") {
+        if (optimizedPrompt) {
             console.log("Optimized prompt:", optimizedPrompt);
             return optimizedPrompt;
         } else {
-            console.warn("optimizedPrompt no encontrado en la respuesta de Make.");
-            return prompt; // Retornamos el prompt original si `optimizedPrompt` no está disponible
+            console.warn("content no encontrado en la respuesta de Make.");
+            return prompt; // Retornamos el prompt original si 'content' no está disponible
         }
     } catch (error) {
         console.error("Error optimizing the prompt:", error);
-        return prompt; // Si hay un error, devolvemos el prompt original
+        return prompt; // Si ocurre un error, devolvemos el prompt original
     }
 }
 
