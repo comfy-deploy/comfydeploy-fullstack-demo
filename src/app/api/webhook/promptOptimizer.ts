@@ -12,16 +12,19 @@ async function promptOptimizer(prompt: string): Promise<string> {
             body: JSON.stringify({ prompt })
         });
 
-        // Verificamos si la respuesta es válida
-        if (!response.ok) {
-            throw new Error(`Failed to optimize prompt: ${response.statusText}`);
+        // Verificamos el tipo de contenido de la respuesta
+        const contentType = response.headers.get("Content-Type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error(`Expected JSON response but got: ${contentType}`);
         }
 
-        // Intentamos parsear la respuesta como JSON
-        const responseText = await response.text(); // Usamos text() para capturar el cuerpo completo como texto
+        // Intentamos leer la respuesta como texto
+        const responseText = await response.text();
+
+        // Intentamos parsear el texto a JSON
         let result;
         try {
-            result = JSON.parse(responseText); // Parseamos la respuesta JSON
+            result = JSON.parse(responseText);
         } catch (jsonError) {
             console.error("Error parsing JSON from Make API:", jsonError);
             console.error("Response body:", responseText); // Muestra el cuerpo completo en caso de error
@@ -31,8 +34,8 @@ async function promptOptimizer(prompt: string): Promise<string> {
         console.log("Respuesta completa de Make:", result);
 
         // Verificamos si el objeto tiene la estructura esperada
-        if (result?.optimizedPrompt && typeof result.optimizedPrompt === "string") {
-            const optimizedPrompt = result.optimizedPrompt;
+        if (result?.choices?.[0]?.message?.content) {
+            const optimizedPrompt = result.choices[0].message.content;
             console.log("Optimized prompt:", optimizedPrompt);
             return optimizedPrompt;
         } else {
