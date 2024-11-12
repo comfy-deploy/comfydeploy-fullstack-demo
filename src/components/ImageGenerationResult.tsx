@@ -2,13 +2,14 @@
 
 "use client";
 
+import Image from "next/image";
 import { LoadingIcon } from "@/components/LoadingIcon";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useComfyQuery } from "@/hooks/hooks";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { ComfyDeployRun } from "../types/types"; // Importa la interfaz
+import { ComfyDeployRun } from "../types/types"; // Ajusta la ruta si está en otra carpeta
 
 export function ImageGenerationResult({
   runId,
@@ -58,7 +59,12 @@ export function ImageGenerationResult({
       )}
     >
       {!loading && image && (
-        <img className="w-full h-full" src={image} alt="Generated image" />
+        <Image
+          src={image}
+          alt="Generated image"
+          layout="fill"
+          objectFit="cover"
+        />
       )}
       {!image && status && (
         <div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
