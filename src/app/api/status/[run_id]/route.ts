@@ -3,8 +3,9 @@ import { runs } from "@/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
-export async function GET(request: NextRequest, { params }: { params: { run_id: string } }) {
-  const { run_id } = params;
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const run_id = searchParams.get("run_id");
 
   if (!run_id) {
     return NextResponse.json(
