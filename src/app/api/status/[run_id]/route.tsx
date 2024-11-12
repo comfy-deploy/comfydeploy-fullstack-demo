@@ -14,8 +14,9 @@ export async function GET(
       { error: "run_id is required" },
       { status: 400 }
     );
-  }
+  }  
 
+  
   try {
     // Busca el run en la base de datos
     const [run] = await db.select().from(runs).where(eq(runs.run_id, run_id));
