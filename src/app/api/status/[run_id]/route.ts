@@ -3,11 +3,13 @@ import { runs } from "@/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { run_id: string } }
-) {
-  const { run_id } = params;
+// Definimos un tipo de contexto que contiene params, adecuado para el segundo argumento
+interface Context {
+  params: { run_id: string };
+}
+
+export async function GET(request: NextRequest, context: Context) {
+  const { run_id } = context.params;
 
   if (!run_id) {
     return NextResponse.json(
