@@ -11,4 +11,5 @@ export const runs = sqliteTable("runs", {
 	inputs: text("inputs", { mode: "json" }).$type<Record<string, string>>(),
 	live_status: text("live_status"),
 	progress: real("progress"),
+	status: text("status"), // Agrega este campo para almacenar el estado
 });

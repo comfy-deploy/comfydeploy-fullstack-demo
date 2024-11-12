@@ -1,17 +1,13 @@
-// src/app/api/status/[run_id]/route.ts
-
-import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-export const runtime = "edge";
+import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  context: any // Ajuste el tipo aquí a "any" para simplificar
+  { params }: { params: { run_id: string } }
 ) {
-  const { run_id } = context.params;
+  const { run_id } = params;
 
   if (!run_id) {
     return NextResponse.json(
@@ -31,13 +27,10 @@ export async function GET(
       );
     }
 
-    // Calcula el status basado en las propiedades existentes
-    const status = run.image_url ? "success" : "processing";
-
     // Devuelve el estado y la URL de la imagen si está disponible
     return NextResponse.json(
       {
-        status: status,
+        status: run.status || "processing",
         image_url: run.image_url || null,
         live_status: run.live_status || null,
       },

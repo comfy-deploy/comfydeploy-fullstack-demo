@@ -4,13 +4,11 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
+import { eq } from "drizzle-orm/expressions";
 
-// Función para optimizar el prompt usando Make con timeout de 7 segundos
+// Función para optimizar el prompt usando Make
 async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 9000); // Timeout de 7 segundos
 
     try {
         const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
@@ -18,11 +16,8 @@ async function promptOptimizer(prompt: string): Promise<string> {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ prompt }),
-            signal: controller.signal
+            body: JSON.stringify({ prompt })
         });
-
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.error(`Failed to optimize prompt: ${response.statusText}`);
@@ -46,7 +41,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
     }
 }
 
-// Función para generar la imagen con el prompt optimizado y un timeout de 45 segundos
+// Función para generar la imagen con el prompt optimizado
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt:", prompt);
 
@@ -60,9 +55,31 @@ export async function generateImage(prompt: string) {
     const host = headersList.get("host") || "";
     const endpoint = `https://${host}`;
 
-    // Optimización del prompt antes de realizar la solicitud de generación de imagen
-    const optimizedPrompt = await promptOptimizer(prompt);
-    console.log("Prompt optimizado listo para enviar a ComfyDeploy:", optimizedPrompt);
+    // Generar un `run_id` único
+    const run_id = `run_${Date.now()}`; // Cambia esto por tu propia lógica de generación de ID si es necesario
+
+    // Paso 1: Estado inicial "optimizing_prompt"
+    await db.insert(runs).values({
+        run_id,  // Asigna el run_id generado
+        user_id: userId,
+        status: "optimizing_prompt",
+        inputs: { input_text: prompt }
+    });
+
+    console.log("Estado inicial 'optimizing_prompt' establecido en la base de datos.");
+
+    // Optimización del prompt
+    let optimizedPrompt;
+    try {
+        optimizedPrompt = await promptOptimizer(prompt);
+    } catch (error) {
+        console.error("Error optimizando prompt, usando el original:", error);
+        optimizedPrompt = prompt;
+    }
+
+    // Actualizar estado a "sending_to_comfy" antes de enviar a ComfyDeploy
+    await db.update(runs).set({ status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
+    console.log("Estado actualizado a 'sending_to_comfy'");
 
     const inputs: Record<string, string> = {
         input_text: optimizedPrompt,
@@ -72,12 +89,8 @@ export async function generateImage(prompt: string) {
         id: ""
     };
 
-    // Configuración de un timeout de 45 segundos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 segundos
-
     try {
-        console.log("Enviando solicitud a ComfyDeploy para generar imagen...");
+        console.log("Enviando solicitud a ComfyDeploy...");
         const response = await fetch("https://www.comfydeploy.com/api/run", {
             method: "POST",
             headers: {
@@ -88,39 +101,25 @@ export async function generateImage(prompt: string) {
                 deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
                 inputs: inputs,
                 webhook: `${endpoint}/api/webhook`
-            }),
-            signal: controller.signal
+            })
         });
-
-        clearTimeout(timeoutId);
-
-        if (response.status === 504) {
-            console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
-            return "504-ignored";
-        }
 
         const result = await response.json();
         console.log("Resultado de la llamada a ComfyDeploy:", result);
 
         if (response.ok && result && typeof result === "object" && "run_id" in result) {
-            await db.insert(runs).values({
-                run_id: result.run_id,
-                user_id: userId,
+            await db.update(runs).set({
+                status: "queued",
                 inputs: inputs
-            });
+            }).where(eq(runs.run_id, run_id));
 
             console.log(`Imagen generada con run_id: ${result.run_id}`);
             return result.run_id;
         } else {
-            console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
             throw new Error("Image generation failed: Invalid response");
         }
-    } catch (error: any) {
-        if (error.name === "AbortError") {
-            console.error("Error: La solicitud fue cancelada por tiempo de espera.");
-        } else {
-            console.error("Error al llamar a la API de ComfyDeploy:", error.message || error);
-        }
+    } catch (error) {
+        console.error("Error al llamar a la API de ComfyDeploy:", error);
         throw new Error("Error generating image");
     }
 }
