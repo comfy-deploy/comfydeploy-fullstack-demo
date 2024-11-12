@@ -5,9 +5,12 @@ import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 
-// Función para optimizar el prompt usando Make
+// Función para optimizar el prompt usando Make con timeout de 7 segundos
 async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000); // Timeout de 7 segundos
 
     try {
         const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
@@ -15,8 +18,11 @@ async function promptOptimizer(prompt: string): Promise<string> {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({ prompt }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.error(`Failed to optimize prompt: ${response.statusText}`);
@@ -34,13 +40,13 @@ async function promptOptimizer(prompt: string): Promise<string> {
             console.warn("Content no encontrado en la respuesta de Make. Usando prompt original.");
             return prompt;
         }
-    } catch (error: any) { // Especificamos que el tipo de error es `any`
+    } catch (error: any) {
         console.error("Error optimizing the prompt:", error.message || error);
         return prompt;
     }
 }
 
-// Función para generar la imagen con el prompt optimizado y un timeout de 30 segundos
+// Función para generar la imagen con el prompt optimizado y un timeout de 45 segundos
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt:", prompt);
 
@@ -66,9 +72,9 @@ export async function generateImage(prompt: string) {
         id: ""
     };
 
-    // Configuración de un timeout de 30 segundos
+    // Configuración de un timeout de 45 segundos
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 segundos
 
     try {
         console.log("Enviando solicitud a ComfyDeploy para generar imagen...");
@@ -83,10 +89,10 @@ export async function generateImage(prompt: string) {
                 inputs: inputs,
                 webhook: `${endpoint}/api/webhook`
             }),
-            signal: controller.signal // Asigna el controlador de abortos
+            signal: controller.signal
         });
 
-        clearTimeout(timeoutId); // Limpia el timeout si la respuesta llega a tiempo
+        clearTimeout(timeoutId);
 
         if (response.status === 504) {
             console.warn("504 Gateway Timeout: Continuando el flujo sin interrumpir.");
@@ -109,7 +115,7 @@ export async function generateImage(prompt: string) {
             console.error("Error: No se recibió un resultado de generación válido o el estado de la respuesta es incorrecto.");
             throw new Error("Image generation failed: Invalid response");
         }
-    } catch (error: any) { // Especificamos que el tipo de error es `any`
+    } catch (error: any) {
         if (error.name === "AbortError") {
             console.error("Error: La solicitud fue cancelada por tiempo de espera.");
         } else {
