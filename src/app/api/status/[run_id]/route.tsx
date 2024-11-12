@@ -1,10 +1,10 @@
+import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
-import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { run_id: string } }
 ) {
   const { run_id } = params;
