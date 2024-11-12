@@ -10,7 +10,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
     console.log("Optimizing prompt with assistant...");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7000); // Timeout de 7 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 9000); // Timeout de 7 segundos
 
     try {
         const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
