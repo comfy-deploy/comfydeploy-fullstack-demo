@@ -7,9 +7,9 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: Request,
-  { params }: { params: Record<string, string> } // Cambiamos el tipo de `params` a `Record<string, string>`
+  context: { params: { run_id: string } } // Ajuste en el tipo de `context` para que sea compatible
 ) {
-  const { run_id } = params;
+  const { run_id } = context.params;
 
   if (!run_id) {
     return NextResponse.json(
@@ -30,13 +30,7 @@ export async function GET(
     }
 
     // Calcula el status basado en las propiedades existentes
-    let status: string;
-
-    if (run.image_url) {
-      status = "success";
-    } else {
-      status = "processing";
-    }
+    const status = run.image_url ? "success" : "processing";
 
     // Devuelve el estado y la URL de la imagen si está disponible
     return NextResponse.json(
