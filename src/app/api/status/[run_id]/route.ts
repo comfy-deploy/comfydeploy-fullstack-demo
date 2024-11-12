@@ -1,13 +1,13 @@
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
+import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { run_id: string } }
+  request: NextRequest,
+  context: { params: { run_id: string } } // Cambiamos aquí para usar `context`
 ) {
-  const { run_id } = params;
+  const { run_id } = context.params;
 
   if (!run_id) {
     return NextResponse.json(
