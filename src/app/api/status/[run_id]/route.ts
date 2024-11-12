@@ -5,9 +5,9 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { run_id: string } } // Cambiamos aquí para usar `context`
+  { params }: { params: { run_id: string } }
 ) {
-  const { run_id } = context.params;
+  const { run_id } = params;
 
   if (!run_id) {
     return NextResponse.json(
