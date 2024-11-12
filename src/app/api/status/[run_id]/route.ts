@@ -7,9 +7,9 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: Request,
-  context: { params: { run_id: string } } // Cambia a este tipo
+  { params }: { params: Record<string, string> } // Cambiamos el tipo de `params` a `Record<string, string>`
 ) {
-  const { run_id } = context.params;
+  const { run_id } = params;
 
   if (!run_id) {
     return NextResponse.json(
