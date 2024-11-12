@@ -5,9 +5,11 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const runtime = "edge";
+
 export async function GET(
   request: Request,
-  context: { params: { run_id: string } } // Ajuste en el tipo de `context` para que sea compatible
+  context: any // Ajuste el tipo aquí a "any" para simplificar
 ) {
   const { run_id } = context.params;
 
