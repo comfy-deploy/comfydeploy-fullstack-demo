@@ -25,12 +25,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Devuelve el estado y la URL de la imagen si está disponible
+    // Devuelve el live_status y la URL de la imagen si está disponible
     return NextResponse.json(
       {
-        status: run.status || "processing",
+        live_status: run.live_status || "processing",
         image_url: run.image_url || null,
-        live_status: run.live_status || null,
       },
       { status: 200 }
     );

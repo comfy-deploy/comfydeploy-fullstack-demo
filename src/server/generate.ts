@@ -62,7 +62,7 @@ export async function generateImage(prompt: string) {
     await db.insert(runs).values({
         run_id,  // Asigna el run_id generado
         user_id: userId,
-        status: "optimizing_prompt",
+        live_status: "optimizing_prompt",
         inputs: { input_text: prompt }
     });
 
@@ -78,7 +78,7 @@ export async function generateImage(prompt: string) {
     }
 
     // Actualizar estado a "sending_to_comfy" antes de enviar a ComfyDeploy
-    await db.update(runs).set({ status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
+    await db.update(runs).set({ live_status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
     console.log("Estado actualizado a 'sending_to_comfy'");
 
     const inputs: Record<string, string> = {
@@ -109,7 +109,7 @@ export async function generateImage(prompt: string) {
 
         if (response.ok && result && typeof result === "object" && "run_id" in result) {
             await db.update(runs).set({
-                status: "queued",
+                live_status: "queued",
                 inputs: inputs
             }).where(eq(runs.run_id, run_id));
 
