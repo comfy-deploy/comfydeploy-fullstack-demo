@@ -1,4 +1,3 @@
-// src/server/generate.ts
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
@@ -16,7 +15,7 @@ async function promptOptimizer(prompt: string): Promise<string> {
 
         if (!response.ok) {
             console.error(`Failed to optimize prompt: ${response.statusText}`);
-            return prompt; // Retornamos el prompt original si falla la solicitud
+            return prompt; // Retorna el prompt original si falla la solicitud
         }
 
         const result = await response.json();
@@ -73,15 +72,19 @@ export async function generateImage(prompt: string, endpoint: string) {
             })
         });
 
+        if (!response.ok) {
+            throw new Error(`ComfyDeploy API responded with status ${response.status}`);
+        }
+
         const result = await response.json();
-        if (response.ok && result?.run_id) {
+        if (result?.run_id) {
             await db.update(runs).set({
                 live_status: "queued",
                 inputs
             }).where(eq(runs.run_id, run_id));
-            return result.run_id;
+            return run_id;
         } else {
-            throw new Error("Image generation failed: Invalid response");
+            throw new Error("Image generation failed: Invalid response from ComfyDeploy");
         }
     } catch (error) {
         console.error("Error calling ComfyDeploy API:", error);

@@ -1,28 +1,17 @@
-// src/app/api/generate/route.ts
-import { NextRequest, NextResponse } from "next/server";
 import { generateImage } from "@/server/generate";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
     try {
         const { prompt } = await request.json();
-        if (!prompt) {
-            return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
-        }
+        const endpoint = request.nextUrl.origin; // Usa el origen de la solicitud para el webhook
 
-        // Define el endpoint para el webhook
-        const host = request.headers.get("host");
-        const protocol = request.headers.get("x-forwarded-proto") || "https";
-        const endpoint = `${protocol}://${host}`;
+        // Inicia el proceso de generación de imagen de forma asincrónica
+        const run_id = await generateImage(prompt, endpoint);
 
-        // Llama a la función generateImage
-        const runId = await generateImage(prompt, endpoint);
-
-        return NextResponse.json({ runId }, { status: 200 });
-    } catch (error) {
-        console.error("Error generating image:", error);
-        return NextResponse.json(
-            { error: "Failed to generate image", details: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-        );
+        return NextResponse.json({ run_id }, { status: 202 }); // Responde de inmediato con el run_id
+    } catch (error: any) {
+        console.error("Error en /api/generate:", error);
+        return NextResponse.json({ message: "Error iniciando la generación de imagen", error: error.message }, { status: 500 });
     }
 }
