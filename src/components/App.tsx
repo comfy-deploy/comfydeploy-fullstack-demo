@@ -1,9 +1,9 @@
+// src/components/App.tsx
 "use client";
 
 import { ImageGenerationResult } from "@/components/ImageGenerationResult";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { optimizePromptHandler } from "@/server/generate";
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { WandSparklesIcon } from "lucide-react";
@@ -20,25 +20,25 @@ export function App() {
 
     const handleGenerate = async () => {
         setIsGenerating(true);
-    
+
         try {
-            // Llamar primero al optimizador de prompt
-            const generatedRunId = await optimizePromptHandler(prompt);
-            if (generatedRunId) {
-                toast.success("Prompt optimization started and image generation initiated!");
-                setRunId(generatedRunId);
-                mutate("userRuns"); // Actualiza la lista de imágenes generadas
+            const response = await fetch("/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt })
+            });
+
+            const result = await response.json();
+            if (response.ok && result.runId) {
+                toast.success("Image generation started!");
+                setRunId(result.runId);
+                mutate("userRuns");
             } else {
-                toast.error("Failed to start the process.");
+                toast.error("Failed to start image generation.");
             }
         } catch (error) {
-            const err = error as Error; // Asegura que `error` sea tratado como `Error`
-            if (err.message.includes("504")) {
-                console.warn("504 Gateway Timeout ignorado.");
-            } else {
-                console.error("Error starting process:", err);
-                toast.error("An error occurred while starting the process.");
-            }
+            console.error("Error generating image:", error);
+            toast.error("An error occurred while generating the image.");
         } finally {
             setIsGenerating(false);
         }
@@ -52,7 +52,7 @@ export function App() {
 
                 if (result.image_url) {
                     mutate("userRuns");
-                    clearInterval(interval); // Detén el polling cuando la imagen esté disponible
+                    clearInterval(interval);
                 }
             }, 5000);
 

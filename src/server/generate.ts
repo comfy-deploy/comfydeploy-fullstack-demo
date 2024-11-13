@@ -2,32 +2,39 @@
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
 import { eq } from "drizzle-orm/expressions";
 
 // Función para optimizar el prompt
 async function promptOptimizer(prompt: string): Promise<string> {
-    console.log("Optimizing prompt...");
+    console.log("Optimizing prompt with assistant...");
     try {
         const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt })
         });
+
+        if (!response.ok) {
+            console.error(`Failed to optimize prompt: ${response.statusText}`);
+            return prompt; // Retornamos el prompt original si falla la solicitud
+        }
+
         const result = await response.json();
-        return result?.choices?.[0]?.content || prompt;
-    } catch (error) {
-        console.error("Error optimizing the prompt:", error);
+        const optimizedPrompt = result?.choices?.[0]?.content;
+        return optimizedPrompt ?? prompt;
+    } catch (error: any) {
+        console.error("Error optimizing the prompt:", error.message || error);
         return prompt;
     }
 }
 
-// Primer handler: optimiza el prompt y actualiza el estado
-export async function optimizePromptHandler(prompt: string) {
+// Función para generar la imagen
+export async function generateImage(prompt: string, endpoint: string) {
     const { userId } = auth();
-    if (!userId) throw new Error("User not authenticated");
+    if (!userId) throw new Error("User not found");
 
     const run_id = `run_${Date.now()}`;
+
     await db.insert(runs).values({
         run_id,
         user_id: userId,
@@ -35,21 +42,15 @@ export async function optimizePromptHandler(prompt: string) {
         inputs: { input_text: prompt }
     });
 
-    const optimizedPrompt = await promptOptimizer(prompt);
-    await db.update(runs).set({
-        live_status: "optimized",
-        inputs: { input_text: optimizedPrompt }
-    }).where(eq(runs.run_id, run_id));
+    let optimizedPrompt = prompt;
+    try {
+        optimizedPrompt = await promptOptimizer(prompt);
+    } catch (error) {
+        console.error("Error optimizing prompt, using original:", error);
+    }
 
-    // Iniciar generación de imagen con el prompt optimizado
-    await generateImageHandler(run_id, optimizedPrompt);
-    return run_id;
-}
+    await db.update(runs).set({ live_status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
 
-// Segundo handler: genera la imagen usando el prompt optimizado
-export async function generateImageHandler(run_id: string, optimizedPrompt: string) {
-    const headersList = await headers();
-    const endpoint = `https://${headersList.get("host") || ""}`;
     const inputs = {
         input_text: optimizedPrompt,
         batch: "1",
@@ -57,8 +58,6 @@ export async function generateImageHandler(run_id: string, optimizedPrompt: stri
         height: "1216",
         id: ""
     };
-
-    await db.update(runs).set({ live_status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
 
     try {
         const response = await fetch("https://www.comfydeploy.com/api/run", {
@@ -75,15 +74,17 @@ export async function generateImageHandler(run_id: string, optimizedPrompt: stri
         });
 
         const result = await response.json();
-        if (response.ok && result && "run_id" in result) {
-            await db.update(runs).set({ live_status: "queued" }).where(eq(runs.run_id, run_id));
+        if (response.ok && result?.run_id) {
+            await db.update(runs).set({
+                live_status: "queued",
+                inputs
+            }).where(eq(runs.run_id, run_id));
             return result.run_id;
         } else {
-            throw new Error("Failed to start image generation");
+            throw new Error("Image generation failed: Invalid response");
         }
     } catch (error) {
-        console.error("Error in image generation:", error);
-        await db.update(runs).set({ live_status: "failed" }).where(eq(runs.run_id, run_id));
-        throw error;
+        console.error("Error calling ComfyDeploy API:", error);
+        throw new Error("Error generating image");
     }
 }
