@@ -3,7 +3,7 @@
 import { ImageGenerationResult } from "@/components/ImageGenerationResult";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { generateImage } from "@/server/generate";
+import { optimizePromptHandler } from "@/server/generate";
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { WandSparklesIcon } from "lucide-react";
@@ -19,31 +19,30 @@ export function App() {
     const [runId, setRunId] = useState<string | null>(null);
 
     const handleGenerate = async () => {
-		setIsGenerating(true);
-	
-		try {
-			const generatedRunId = await generateImage(prompt);
-			if (generatedRunId === "504-ignored") {
-				console.warn("504 Gateway Timeout ignorado.");
-			} else if (generatedRunId) {
-				toast.success("Image generation started!");
-				setRunId(generatedRunId);
-				mutate("userRuns"); // Actualiza la lista de imágenes generadas
-			} else {
-				toast.error("Failed to start image generation.");
-			}
-		} catch (error) {
-			const err = error as Error; // Asegura que `error` sea tratado como `Error`
-			if (err.message.includes("504")) {
-				console.warn("504 Gateway Timeout ignorado.");
-			} else {
-				console.error("Error generating image:", err);
-				toast.error("An error occurred while generating the image.");
-			}
-		} finally {
-			setIsGenerating(false);
-		}
-	};	
+        setIsGenerating(true);
+    
+        try {
+            // Llamar primero al optimizador de prompt
+            const generatedRunId = await optimizePromptHandler(prompt);
+            if (generatedRunId) {
+                toast.success("Prompt optimization started and image generation initiated!");
+                setRunId(generatedRunId);
+                mutate("userRuns"); // Actualiza la lista de imágenes generadas
+            } else {
+                toast.error("Failed to start the process.");
+            }
+        } catch (error) {
+            const err = error as Error; // Asegura que `error` sea tratado como `Error`
+            if (err.message.includes("504")) {
+                console.warn("504 Gateway Timeout ignorado.");
+            } else {
+                console.error("Error starting process:", err);
+                toast.error("An error occurred while starting the process.");
+            }
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     useEffect(() => {
         if (runId) {

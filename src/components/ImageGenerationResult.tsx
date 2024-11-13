@@ -66,6 +66,7 @@ export function ImageGenerationResult({
             {status === "queued" && "Queued..."}
             {status === "processing" && "Processing..."}
             {status === "completed" && "Completed!"}
+            {status === "error" && "An error occurred!"}
             <LoadingIcon />
           </div>
           {progress !== undefined && (
