@@ -1,4 +1,4 @@
-// src/app/api/cd/route.ts
+// src/app/api/cd/[...routes]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -31,46 +31,67 @@ async function handleRequest(request: NextRequest) {
   headers.delete("host");
   headers.set("Authorization", `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`);
 
-  const response = await fetch(url, {
-    method: request.method,
-    headers,
-    body: request.body,
-  });
+  console.log("Request URL to ComfyDeploy:", url);
+  console.log("Request Method:", request.method);
+  console.log("Headers:", headers);
 
-  // Verifica si la respuesta es streamable
-  const isStreamable =
-    response.headers.get("Transfer-Encoding") === "chunked" ||
-    response.headers.get("Content-Type")?.includes("text/event-stream");
+  try {
+    const response = await fetch(url, {
+      method: request.method,
+      headers,
+      body: request.body ? request.body : undefined,  // Asegura que `body` solo esté presente si es necesario
+    });
 
-  if (isStreamable) {
-    // Crea un TransformStream para manejar la respuesta en streaming
-    const transformStream = new TransformStream();
-    const writer = transformStream.writable.getWriter();
+    // Verifica si la respuesta es streamable
+    const isStreamable =
+      response.headers.get("Transfer-Encoding") === "chunked" ||
+      response.headers.get("Content-Type")?.includes("text/event-stream");
 
-    // Empieza a canalizar el cuerpo de la respuesta al TransformStream
-    response.body?.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          writer.write(chunk);
-        },
-        close() {
-          writer.close();
-        },
-      })
-    );
+    if (isStreamable) {
+      console.log("Handling a streamable response...");
 
-    // Retorna una respuesta en streaming
-    return new NextResponse(transformStream.readable, {
+      // Crea un TransformStream para manejar la respuesta en streaming
+      const transformStream = new TransformStream();
+      const writer = transformStream.writable.getWriter();
+
+      // Empieza a canalizar el cuerpo de la respuesta al TransformStream
+      response.body?.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            writer.write(chunk);
+          },
+          close() {
+            writer.close();
+          },
+        })
+      );
+
+      // Retorna una respuesta en streaming
+      return new NextResponse(transformStream.readable, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    }
+
+    console.log("Returning non-streamable response...");
+    // Para respuestas no streamables, retorna como antes
+    return new NextResponse(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
     });
-  }
 
-  // Para respuestas no streamables, retorna como antes
-  return new NextResponse(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
+} catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error fetching from ComfyDeploy API:", errorMessage);
+    
+    return new NextResponse(
+      JSON.stringify({ error: "Internal Server Error", details: errorMessage }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+}
 }
