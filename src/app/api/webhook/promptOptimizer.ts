@@ -1,4 +1,3 @@
-// src/app/api/webhook/promptOptimizer.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -6,7 +5,7 @@ export async function POST(request: NextRequest) {
 
     try {
         // Llamada a la API de OpenAI para optimizar el prompt usando el asistente específico
-        const response = await fetch(`https://api.openai.com/v1/assistants/${process.env.ASSISTANT_ID}/messages`, {
+        const response = await fetch(`https://api.openai.com/v1/assistants/asst_zpQUmdKpyGW2WqXbWXRmBNn7/messages`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

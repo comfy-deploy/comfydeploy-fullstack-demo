@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { mutate } from "swr";
-import { ImageGenerationResult } from "@/components/ImageGenerationResult";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "./ui/card";
@@ -12,57 +11,39 @@ import { cn } from "@/lib/utils";
 
 export function App() {
     const [prompt, setPrompt] = useState("beautiful scenery nature glass bottle landscape, purple galaxy bottle");
-    const [optimizedPrompt, setOptimizedPrompt] = useState<string | null>(null);
-    const [isOptimizing, setIsOptimizing] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [runId, setRunId] = useState<string | null>(null);
 
-    // Función para optimizar el prompt usando el asistente de OpenAI
-    const handleOptimizePrompt = async () => {
-        setIsOptimizing(true);
+    // Función para optimizar el prompt y generar la imagen en un solo flujo
+    const handleGenerateImage = async () => {
+        setIsGenerating(true);
 
         try {
-            const response = await fetch("/api/webhook/promptOptimizer", {
+            // Paso 1: Optimización del prompt usando OpenAI
+            const optimizeResponse = await fetch("/api/webhook/promptOptimizer", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt })
             });
 
-            const data = await response.json();
-            if (data.optimizedPrompt) {
-                setOptimizedPrompt(data.optimizedPrompt);
-                toast.success("Prompt optimized successfully!");
-            } else {
-                throw new Error(data.error || "Failed to optimize prompt.");
+            const optimizeData = await optimizeResponse.json();
+            if (!optimizeData.optimizedPrompt) {
+                throw new Error(optimizeData.error || "Failed to optimize prompt.");
             }
-        } catch (error) {
-            console.error("Error optimizing prompt:", error);
-            toast.error("Error optimizing prompt");
-        } finally {
-            setIsOptimizing(false);
-        }
-    };
+            const optimizedPrompt = optimizeData.optimizedPrompt;
+            toast.success("Prompt optimized successfully!");
 
-    // Función para generar la imagen usando el prompt optimizado a través del endpoint
-    const handleGenerateImage = async () => {
-        if (!optimizedPrompt) {
-            toast.error("Please optimize the prompt first!");
-            return;
-        }
-
-        setIsGenerating(true);
-
-        try {
-            const response = await fetch("/api/generate", {
+            // Paso 2: Generación de la imagen usando el prompt optimizado
+            const generateResponse = await fetch("/api/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: optimizedPrompt })
             });
 
-            const data = await response.json();
-            if (data.runId) {
+            const generateData = await generateResponse.json();
+            if (generateData.runId) {
                 toast.success("Image generation started!");
-                setRunId(data.runId);
+                setRunId(generateData.runId);
                 mutate("userRuns"); // Actualiza la lista de imágenes generadas
             } else {
                 toast.error("Failed to start image generation.");
@@ -87,18 +68,12 @@ export function App() {
                         placeholder="Enter a prompt to generate an image"
                     />
                     <Button
-                        onClick={handleOptimizePrompt}
-                        disabled={isOptimizing || isGenerating}
-                    >
-                        {isOptimizing ? "Optimizing..." : "Optimize Prompt"}
-                    </Button>
-                    <Button
                         variant="expandIcon"
                         className={cn("rounded-xl transition-all w-[170px] min-w-0 p-0", isGenerating && "opacity-50 cursor-not-allowed")}
                         Icon={WandSparklesIcon}
                         iconPlacement="right"
                         onClick={handleGenerateImage}
-                        disabled={!optimizedPrompt || isGenerating}
+                        disabled={isGenerating}
                     >
                         {isGenerating ? "Generating..." : "Generate"}
                     </Button>
