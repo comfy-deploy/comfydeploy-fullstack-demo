@@ -35,3 +35,4 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ optimizedPrompt: prompt, error: "Server error" }, { status: 500 });
     }
 }
+ 
