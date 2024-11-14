@@ -13,7 +13,7 @@ async function optimizePrompt(prompt: string): Promise<string> {
             "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: assistantInstructions },
                 { role: "user", content: prompt }
