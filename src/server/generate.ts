@@ -3,7 +3,6 @@
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
 
 export async function generateImage(prompt: string) {
     console.log("Iniciando generación de imagen con prompt optimizado:", prompt);
@@ -14,9 +13,9 @@ export async function generateImage(prompt: string) {
         throw new Error("User not found");
     }
 
-    const headersList = await headers();
-    const host = headersList.get("host") || "";
-    const endpoint = `https://${host}`;
+    // Determinamos el endpoint para el webhook usando una variable de entorno
+    const host = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+    const endpoint = `${host}/api/webhook`;
 
     const inputs: Record<string, string> = {
         input_text: prompt,
@@ -37,7 +36,7 @@ export async function generateImage(prompt: string) {
             body: JSON.stringify({
                 deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
                 inputs: inputs,
-                webhook: `${endpoint}/api/webhook`
+                webhook: endpoint
             })
         });
 
