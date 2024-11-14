@@ -32,7 +32,6 @@ export function ImageGenerationResult({
 
 	useEffect(() => {
 		const res = data;
-		console.log("Respuesta de ComfyDeploy:", res);
 		if (res) {
 			setStatus(res.status);
 			setProgress(res.progress);
