@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "./ui/card";
 import { WandSparklesIcon } from "lucide-react";
-import { generateImage } from "@/server/generate";
 import { cn } from "@/lib/utils";
 
 export function App() {
@@ -44,7 +43,7 @@ export function App() {
         }
     };
 
-    // Función para generar la imagen usando el prompt optimizado
+    // Función para generar la imagen usando el prompt optimizado a través del endpoint
     const handleGenerateImage = async () => {
         if (!optimizedPrompt) {
             toast.error("Please optimize the prompt first!");
@@ -54,11 +53,17 @@ export function App() {
         setIsGenerating(true);
 
         try {
-            const generatedRunId = await generateImage(optimizedPrompt);
-            if (generatedRunId) {
+            const response = await fetch("/api/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: optimizedPrompt })
+            });
+
+            const data = await response.json();
+            if (data.runId) {
                 toast.success("Image generation started!");
-                setRunId(generatedRunId);
-                mutate("userRuns");
+                setRunId(data.runId);
+                mutate("userRuns"); // Actualiza la lista de imágenes generadas
             } else {
                 toast.error("Failed to start image generation.");
             }
