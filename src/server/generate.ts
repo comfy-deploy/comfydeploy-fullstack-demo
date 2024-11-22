@@ -72,8 +72,8 @@ export async function generateImage(prompt: string) {
     const inputs: Record<string, string> = {
         input_text: optimizedPrompt,
         batch: "1",
-        width: "832",
-        height: "1216",
+        width: "896",
+        height: "1152",
         id: ""
     };
 
