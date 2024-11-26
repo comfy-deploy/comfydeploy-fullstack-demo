@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useComfyQuery } from "@/hooks/hooks";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export function ImageGenerationResult({
   runId,
@@ -30,7 +29,7 @@ export function ImageGenerationResult({
     ],
     {
       refetchInterval: 2000,
-    }
+    },
   );
 
   const router = useRouter();
@@ -45,7 +44,7 @@ export function ImageGenerationResult({
     if (res && res.status === "success") {
       setImage(
         typeof res.outputs?.[0]?.data?.images?.[0] === "object" &&
-          "url" in res.outputs?.[0]?.data?.images?.[0]
+        "url" in res.outputs?.[0]?.data?.images?.[0]
           ? res.outputs[0].data.images[0].url
           : ""
       );
@@ -67,16 +66,12 @@ export function ImageGenerationResult({
       )}
     >
       {!loading && image && (
-        <div className="w-full h-full relative">
-          <Image
-            src={image}
-            alt="Generated image"
-            layout="fill"
-            objectFit="cover"
-            className="cursor-pointer"
-            onClick={handleImageClick}
-          />
-        </div>
+        <img
+          className="w-full h-full cursor-pointer"
+          src={image}
+          alt="Generated image"
+          onClick={handleImageClick}
+        />
       )}
       {!image && status && (
         <div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
@@ -95,3 +90,4 @@ export function ImageGenerationResult({
     </div>
   );
 }
+ 
