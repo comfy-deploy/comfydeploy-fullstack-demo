@@ -2,6 +2,9 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    domains: ['comfy-deploy-output.s3.amazonaws.com'], // Agrega el dominio aquí
+  },
   webpack: (config, { isServer }) => {
     // Alias 'react-konva' para usar la versión core
     config.resolve.alias['react-konva'] = 'react-konva/lib/ReactKonvaCore';
@@ -11,8 +14,8 @@ const nextConfig = {
       config.externals = config.externals || [];
       // Excluir 'konva' y 'canvas' del build del servidor
       config.externals.push({
-        'konva': 'konva',
-        'canvas': 'canvas',
+        konva: 'konva',
+        canvas: 'canvas',
       });
     }
 
