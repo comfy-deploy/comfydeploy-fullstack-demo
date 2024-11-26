@@ -1,7 +1,7 @@
 // src/components/ui/MockupEditor.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stage, Layer, Image as KonvaImage, Group } from "react-konva";
 import useImage from "use-image";
 
@@ -36,6 +36,9 @@ const MockupEditor: React.FC<MockupEditorProps> = ({
       height: 200,
     }))
   );
+
+  // Crear un array de imágenes cargadas utilizando useImage
+  const imagesLoaded = images.map((url) => useImage(url));
 
   const handleDragEnd = (index: number, e: any) => {
     const newImages = [...draggableImages];
@@ -142,7 +145,8 @@ const MockupEditor: React.FC<MockupEditorProps> = ({
             clipHeight={printArea.height}
           >
             {draggableImages.map((img, index) => {
-              const [image] = useImage(img.url);
+              const [image] = imagesLoaded[index];
+
               return (
                 <KonvaImage
                   key={index}
