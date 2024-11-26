@@ -1,26 +1,13 @@
 // src/hooks/useImages.ts
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import useImage from 'use-image';
 
 export function useImages(urls: string[]) {
-  const [images, setImages] = useState<(HTMLImageElement | undefined)[]>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    Promise.all(urls.map((url) => {
-      const [image] = useImage(url);
-      return image;
-    })).then((loadedImages) => {
-      if (isMounted) {
-        setImages(loadedImages);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
+  // Utilizamos useMemo para memorizar el resultado y evitar llamadas innecesarias
+  const images = useMemo(() => {
+    // Creamos un array donde cada posición es el resultado de useImage
+    return urls.map((url) => useImage(url));
   }, [urls]);
 
-  return images;
+  return images; // Retornamos el array de [image, status] por cada URL
 }

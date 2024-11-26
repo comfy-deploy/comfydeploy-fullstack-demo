@@ -36,21 +36,19 @@ const DraggableImage: React.FC<DraggableImageProps> = ({
 }) => {
   const [image] = useImage(img.url);
 
-  return (
-    image && (
-      <KonvaImage
-        key={index}
-        image={image}
-        x={img.x}
-        y={img.y}
-        width={img.width}
-        height={img.height}
-        draggable
-        onDragEnd={(e) => handleDragEnd(index, e)}
-        onTransformEnd={(e) => handleTransformEnd(index, e)}
-      />
-    )
-  );
+  return image ? (
+    <KonvaImage
+      key={index}
+      image={image}
+      x={img.x}
+      y={img.y}
+      width={img.width}
+      height={img.height}
+      draggable
+      onDragEnd={(e) => handleDragEnd(index, e)}
+      onTransformEnd={(e) => handleTransformEnd(index, e)}
+    />
+  ) : null;
 };
 
 const MockupEditor: React.FC<MockupEditorProps> = ({
