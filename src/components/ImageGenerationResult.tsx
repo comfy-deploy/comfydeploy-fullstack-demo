@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useComfyQuery } from "@/hooks/hooks";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import Image from "next/image"; // Importamos Image
 
 export function ImageGenerationResult({
   runId,
@@ -29,7 +30,7 @@ export function ImageGenerationResult({
     ],
     {
       refetchInterval: 2000,
-    },
+    }
   );
 
   const router = useRouter();
@@ -44,7 +45,7 @@ export function ImageGenerationResult({
     if (res && res.status === "success") {
       setImage(
         typeof res.outputs?.[0]?.data?.images?.[0] === "object" &&
-        "url" in res.outputs?.[0]?.data?.images?.[0]
+          "url" in res.outputs?.[0]?.data?.images?.[0]
           ? res.outputs[0].data.images[0].url
           : ""
       );
@@ -66,12 +67,16 @@ export function ImageGenerationResult({
       )}
     >
       {!loading && image && (
-        <img
-          className="w-full h-full cursor-pointer"
-          src={image}
-          alt="Generated image"
-          onClick={handleImageClick}
-        />
+        <div className="w-full h-full relative cursor-pointer" onClick={handleImageClick}>
+          <Image
+            src={image}
+            alt="Generated image"
+            layout="responsive"
+            width={512} // Ajusta el ancho según tus necesidades
+            height={512} // Ajusta la altura según tus necesidades
+            className="w-full h-full object-cover"
+          />
+        </div>
       )}
       {!image && status && (
         <div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
@@ -90,4 +95,3 @@ export function ImageGenerationResult({
     </div>
   );
 }
- 
