@@ -1,7 +1,7 @@
 // src/components/ui/MockupEditor.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Stage, Layer, Image as KonvaImage, Group } from "react-konva";
 import useImage from "use-image";
 
@@ -13,6 +13,44 @@ type MockupEditorProps = {
   garmentColor: string;
   images: string[]; // URLs de las imágenes seleccionadas
   view: ViewType;
+};
+
+type DraggableImageProps = {
+  img: {
+    url: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  index: number;
+  handleDragEnd: (index: number, e: any) => void;
+  handleTransformEnd: (index: number, e: any) => void;
+};
+
+const DraggableImage: React.FC<DraggableImageProps> = ({
+  img,
+  index,
+  handleDragEnd,
+  handleTransformEnd,
+}) => {
+  const [image] = useImage(img.url);
+
+  return (
+    image && (
+      <KonvaImage
+        key={index}
+        image={image}
+        x={img.x}
+        y={img.y}
+        width={img.width}
+        height={img.height}
+        draggable
+        onDragEnd={(e) => handleDragEnd(index, e)}
+        onTransformEnd={(e) => handleTransformEnd(index, e)}
+      />
+    )
+  );
 };
 
 const MockupEditor: React.FC<MockupEditorProps> = ({
@@ -36,9 +74,6 @@ const MockupEditor: React.FC<MockupEditorProps> = ({
       height: 200,
     }))
   );
-
-  // Crear un array de imágenes cargadas utilizando useImage
-  const imagesLoaded = images.map((url) => useImage(url));
 
   const handleDragEnd = (index: number, e: any) => {
     const newImages = [...draggableImages];
@@ -144,23 +179,15 @@ const MockupEditor: React.FC<MockupEditorProps> = ({
             clipWidth={printArea.width}
             clipHeight={printArea.height}
           >
-            {draggableImages.map((img, index) => {
-              const [image] = imagesLoaded[index];
-
-              return (
-                <KonvaImage
-                  key={index}
-                  image={image}
-                  x={img.x}
-                  y={img.y}
-                  width={img.width}
-                  height={img.height}
-                  draggable
-                  onDragEnd={(e) => handleDragEnd(index, e)}
-                  onTransformEnd={(e) => handleTransformEnd(index, e)}
-                />
-              );
-            })}
+            {draggableImages.map((img, index) => (
+              <DraggableImage
+                key={index}
+                img={img}
+                index={index}
+                handleDragEnd={handleDragEnd}
+                handleTransformEnd={handleTransformEnd}
+              />
+            ))}
           </Group>
 
           {/* Capa de sombras */}
