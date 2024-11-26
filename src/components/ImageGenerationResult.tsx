@@ -20,7 +20,7 @@ export function ImageGenerationResult({
   const [liveStatus, setLiveStatus] = useState<string | null>();
   const [loading, setLoading] = useState(true);
 
-  const { data, isLoading } = useComfyQuery(
+  const { data } = useComfyQuery(
     "run",
     "get",
     [
@@ -48,7 +48,7 @@ export function ImageGenerationResult({
         "url" in res.outputs?.[0]?.data?.images?.[0]
           ? res.outputs[0].data.images[0].url
           : "";
-      console.log("Image URL:", imageUrl); // Verifica la URL de la imagen
+      console.log("Image URL:", imageUrl);
       setImage(imageUrl);
       setLoading(false);
     }
@@ -63,9 +63,10 @@ export function ImageGenerationResult({
   return (
     <div
       className={cn(
-        "border border-gray-200 w-full aspect-[512/512] relative",
+        "border border-gray-200 w-full relative",
         className
       )}
+      style={{ aspectRatio: '7 / 9' }} // Ajustamos la relación de aspecto aquí
     >
       {!loading && image && (
         <div
@@ -75,14 +76,14 @@ export function ImageGenerationResult({
           <Image
             src={image}
             alt="Generated image"
-            width={512}
-            height={512}
-            className="object-cover"
+            layout="fill"
+            objectFit="contain" // Usamos 'contain' para evitar que se corte la imagen
+            priority // Opcional: prioriza la carga de esta imagen
           />
         </div>
       )}
       {!image && status && (
-        <div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
+        <div className="absolute z-10 inset-0 flex flex-col items-center justify-center gap-2 px-4">
           <div className="flex items-center justify-center gap-2 text-gray-600">
             {status} <LoadingIcon />
           </div>
