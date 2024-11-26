@@ -34,6 +34,7 @@
     "drizzle-kit": "^0.20.17",
     "drizzle-orm": "^0.30.10",
     "drizzle-zod": "^0.5.1",
+    "konva": "^9.3.16",
     "lucide-react": "^0.378.0",
     "next": "rc",
     "next-themes": "^0.3.0",
@@ -41,12 +42,14 @@
     "react": "rc",
     "react-dom": "rc",
     "react-hook-form": "^7.51.3",
+    "react-konva": "^18.2.10",
     "sonner": "^1.4.41",
     "swr": "beta",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "tcp-port-used": "^1.0.2",
     "use-debounce": "^10.0.1",
+    "use-image": "^1.1.1",
     "zod": "^3.23.6"
   },
   "devDependencies": {

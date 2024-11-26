@@ -19,7 +19,7 @@ export function ImageGenerationResult({
   const [liveStatus, setLiveStatus] = useState<string | null>();
   const [loading, setLoading] = useState(true);
 
-  const { data } = useComfyQuery(
+  const { data, isLoading } = useComfyQuery(
     "run",
     "get",
     [
@@ -61,13 +61,13 @@ export function ImageGenerationResult({
   return (
     <div
       className={cn(
-        "border border-gray-200 w-full aspect-[7/9] relative",
+        "border border-gray-200 w-full aspect-[512/512] relative",
         className
       )}
     >
       {!loading && image && (
         <img
-          className="w-full h-full object-cover cursor-pointer"
+          className="w-full h-full cursor-pointer"
           src={image}
           alt="Generated image"
           onClick={handleImageClick}
@@ -90,3 +90,4 @@ export function ImageGenerationResult({
     </div>
   );
 }
+ 
