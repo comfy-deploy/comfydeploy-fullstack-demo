@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useComfyQuery } from "@/hooks/hooks";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import Image from "next/image"; // Importamos Image
+import Image from "next/image";
 
 export function ImageGenerationResult({
   runId,
@@ -43,12 +43,13 @@ export function ImageGenerationResult({
       setLiveStatus(res.liveStatus ?? null);
     }
     if (res && res.status === "success") {
-      setImage(
+      const imageUrl =
         typeof res.outputs?.[0]?.data?.images?.[0] === "object" &&
-          "url" in res.outputs?.[0]?.data?.images?.[0]
+        "url" in res.outputs?.[0]?.data?.images?.[0]
           ? res.outputs[0].data.images[0].url
-          : ""
-      );
+          : "";
+      console.log("Image URL:", imageUrl); // Verifica la URL de la imagen
+      setImage(imageUrl);
       setLoading(false);
     }
   }, [data]);
@@ -67,14 +68,16 @@ export function ImageGenerationResult({
       )}
     >
       {!loading && image && (
-        <div className="w-full h-full relative cursor-pointer" onClick={handleImageClick}>
+        <div
+          className="w-full h-full relative cursor-pointer"
+          onClick={handleImageClick}
+        >
           <Image
             src={image}
             alt="Generated image"
-            layout="responsive"
-            width={512} // Ajusta el ancho según tus necesidades
-            height={512} // Ajusta la altura según tus necesidades
-            className="w-full h-full object-cover"
+            width={512}
+            height={512}
+            className="object-cover"
           />
         </div>
       )}
