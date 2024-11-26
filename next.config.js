@@ -2,21 +2,22 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    webpack: (config, { isServer }) => {
-      // Alias 'react-konva' to use the core version
-      config.resolve.alias['react-konva'] = 'react-konva/lib/ReactKonvaCore';
-  
-      if (isServer) {
-        // Exclude 'konva' and 'canvas' from the server build
-        config.externals.push({
-          'konva': 'konva',
-          'canvas': 'canvas',
-        });
-      }
-  
-      return config;
-    },
-  };
-  
-  module.exports = nextConfig;
-  
+  webpack: (config, { isServer }) => {
+    // Alias 'react-konva' para usar la versión core
+    config.resolve.alias['react-konva'] = 'react-konva/lib/ReactKonvaCore';
+
+    if (isServer) {
+      // Asegurarse de que 'externals' está definido
+      config.externals = config.externals || [];
+      // Excluir 'konva' y 'canvas' del build del servidor
+      config.externals.push({
+        'konva': 'konva',
+        'canvas': 'canvas',
+      });
+    }
+
+    return config;
+  },
+};
+
+module.exports = nextConfig;
