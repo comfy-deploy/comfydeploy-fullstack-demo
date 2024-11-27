@@ -5,45 +5,52 @@ import React, { useState, useEffect } from "react";
 import { GarmentSelector } from "@/components/ui/GarmentSelector";
 import { useSearchParams } from "next/navigation";
 
-// Importación dinámica de MockupEditor, deshabilitando SSR
-const MockupEditor = dynamic(
-  () => import("@/components/ui/MockupEditor"),
-  { ssr: false }
-) as React.ComponentType<{
-  garmentType: "remera_clasica" | "remera_oversize" | "buzo";
-  garmentColor: string;
-  images: string[];
-  view: "frente" | "dorso";
-}>;
+// Importación dinámica de MockupEditor
+const MockupEditor = dynamic(() => import("@/components/ui/MockupEditor"), {
+  ssr: false,
+});
 
 export default function MockupPage() {
   const searchParams = useSearchParams();
   const imagesParam = searchParams.get("images");
-  const images = imagesParam ? imagesParam.split(",") : [];
 
-  const [garmentType, setGarmentType] = useState<"remera_clasica" | "remera_oversize" | "buzo">("remera_clasica");
+  // Decodificar la URL para evitar problemas de caracteres codificados
+  const images = imagesParam
+    ? imagesParam.split(",").map((url) => decodeURIComponent(url))
+    : [];
+
+  const [garmentType, setGarmentType] = useState<
+    "remera_clasica" | "remera_oversize" | "buzo"
+  >("remera_clasica");
   const [garmentColor, setGarmentColor] = useState("blanco");
   const [view, setView] = useState<"frente" | "dorso">("frente");
 
-  // Debugging: Logs para verificar los valores de las props
+  // Agregamos mensajes de consola para depuración
   useEffect(() => {
+    console.log("Mockup Page Loaded");
+    console.log("Images:", images);
     console.log("Garment Type:", garmentType);
     console.log("Garment Color:", garmentColor);
     console.log("View:", view);
-    console.log("Images:", images);
   }, [garmentType, garmentColor, view, images]);
+
+  // Mostrar un mensaje si no hay imágenes
+  if (!images || images.length === 0) {
+    return (
+      <div className="mockup-page">
+        <p>No se encontraron imágenes para cargar. Por favor, inténtalo de nuevo.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mockup-page">
-      {/* Selector para cambiar el tipo y color de prenda */}
       <GarmentSelector
         garmentType={garmentType}
         setGarmentType={setGarmentType}
         garmentColor={garmentColor}
         setGarmentColor={setGarmentColor}
       />
-
-      {/* Botones para cambiar la vista (frente/dorso) */}
       <div className="view-selector">
         <button
           onClick={() => setView("frente")}
@@ -58,18 +65,12 @@ export default function MockupPage() {
           Dorso
         </button>
       </div>
-
-      {/* Editor de mockups */}
-      {images.length > 0 ? (
-        <MockupEditor
-          garmentType={garmentType}
-          garmentColor={garmentColor}
-          images={images}
-          view={view}
-        />
-      ) : (
-        <p>No hay imágenes disponibles para mostrar.</p>
-      )}
+      <MockupEditor
+        garmentType={garmentType}
+        garmentColor={garmentColor}
+        images={images}
+        view={view}
+      />
     </div>
   );
 }
