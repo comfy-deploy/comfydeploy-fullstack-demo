@@ -36,7 +36,7 @@
     "drizzle-zod": "^0.5.1",
     "konva": "^9.3.16",
     "lucide-react": "^0.378.0",
-    "next": "rc",
+    "next": "^13.5.5",
     "next-themes": "^0.3.0",
     "node-fetch": "^3.3.2",
     "react": "^18.3.1",

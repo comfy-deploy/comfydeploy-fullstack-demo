@@ -1,8 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const KonvaTest = dynamic(() => import("./KonvaTest"));
+import React from "react";
+import KonvaTest from "./KonvaTest";
 
 export default function MockupPage() {
   return (
