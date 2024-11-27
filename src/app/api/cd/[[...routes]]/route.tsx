@@ -69,3 +69,4 @@ async function handleRequest(request: NextRequest) {
 		headers: response.headers,
 	});
 }
+

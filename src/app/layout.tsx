@@ -10,30 +10,31 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
 	title: "ComfyUI Nextjs Demo",
-	description:
-		"A fullstack demo of ComfyUI with Nextjs, powered by ComfyDeploy",
+	description: "A fullstack demo of ComfyUI with Nextjs, powered by ComfyDeploy",
 	keywords: ["nextjs", "comfyui", "comfydeploy", "fullstack", "demo"],
 	openGraph: {
 		title: "ComfyUI Nextjs Demo",
-		description:
-			"A fullstack demo of ComfyUI with Nextjs, powered by ComfyDeploy",
+		description: "A fullstack demo of ComfyUI with Nextjs, powered by ComfyDeploy",
 	},
 };
 
 export default function RootLayout({
 	children,
-}: Readonly<{
+}: {
 	children: React.ReactNode;
-}>) {
+}) {
 	return (
 		<ClerkProvider>
 			<html lang="en">
-				<ComfyDeployProvider>
-					<body className={inter.className}>{children}</body>
-				</ComfyDeployProvider>
-				<Toaster />
-				<HandleSignout />
+				<body className={inter.className}>
+					<ComfyDeployProvider>
+						{children}
+					</ComfyDeployProvider>
+					<Toaster />
+					<HandleSignout />
+				</body>
 			</html>
 		</ClerkProvider>
 	);
 }
+
