@@ -1,70 +1,93 @@
-"use server";
-
 import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { ComfyDeploy } from "comfydeploy";
-import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { promises as fs } from "node:fs";
+import { eq } from "drizzle-orm/expressions";
 
-const client = new ComfyDeploy({
-	bearer: process.env.COMFY_DEPLOY_API_KEY,
-});
+// Función para optimizar el prompt
+async function promptOptimizer(prompt: string): Promise<string> {
+    console.log("Optimizing prompt with assistant...");
+    try {
+        const response = await fetch("https://hook.us2.make.com/rdpyblg9ov0hrjcqhsktc8l7o6gmiwsc", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
 
-const isDevelopment = process.env.NODE_ENV === "development";
+        if (!response.ok) {
+            console.error(`Failed to optimize prompt: ${response.statusText}`);
+            return prompt; // Retorna el prompt original si falla la solicitud
+        }
 
-export async function generateImage(prompt: string) {
-	const { userId } = auth();
-
-	const headersList = headers();
-	const host = headersList.get("host") || "";
-	const protocol = headersList.get("x-forwarded-proto") || "";
-	let endpoint = `${protocol}://${host}`;
-
-	if (isDevelopment) {
-		const tunnelUrlFilePath = "tunnel_url.txt";
-
-		try {
-			const tunnelUrl = await fs.readFile(tunnelUrlFilePath, "utf-8");
-			endpoint = tunnelUrl.trim();
-
-			console.log(endpoint);
-		} catch (error) {
-			console.error(
-				`Failed to read tunnel URL from ${tunnelUrlFilePath}:`,
-				error,
-			);
-		}
-	}
-
-	if (!userId) throw new Error("User not found");
-
-	const inputs = {
-		positive_prompt: prompt,
-		negative_prompt: "text, watermark",
-	};
-
-	const result = await client.run.queue({
-		deploymentId: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
-		webhook: `${endpoint}/api/webhook`, // optional
-		inputs: inputs,
-	});
-
-	if (result) {
-		await db.insert(runs).values({
-			run_id: result.runId,
-			user_id: userId,
-			inputs: inputs,
-		});
-		return result.runId;
-	}
-
-	return undefined;
+        const result = await response.json();
+        const optimizedPrompt = result?.choices?.[0]?.content;
+        return optimizedPrompt ?? prompt;
+    } catch (error: any) {
+        console.error("Error optimizing the prompt:", error.message || error);
+        return prompt;
+    }
 }
 
-export async function checkStatus(run_id: string) {
-	return await client.run.get({
-		runId: run_id,
-	});
+// Función para generar la imagen
+export async function generateImage(prompt: string, endpoint: string) {
+    const { userId } = auth();
+    if (!userId) throw new Error("User not found");
+
+    const run_id = `run_${Date.now()}`;
+
+    await db.insert(runs).values({
+        run_id,
+        user_id: userId,
+        live_status: "optimizing_prompt",
+        inputs: { input_text: prompt }
+    });
+
+    let optimizedPrompt = prompt;
+    try {
+        optimizedPrompt = await promptOptimizer(prompt);
+    } catch (error) {
+        console.error("Error optimizing prompt, using original:", error);
+    }
+
+    await db.update(runs).set({ live_status: "sending_to_comfy" }).where(eq(runs.run_id, run_id));
+
+    const inputs = {
+        input_text: optimizedPrompt,
+        batch: "1",
+        width: "832",
+        height: "1216",
+        id: ""
+    };
+
+    try {
+        const response = await fetch("https://www.comfydeploy.com/api/run", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`
+            },
+            body: JSON.stringify({
+                deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
+                inputs,
+                webhook: `${endpoint}/api/webhook`
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`ComfyDeploy API responded with status ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result?.run_id) {
+            await db.update(runs).set({
+                live_status: "queued",
+                inputs
+            }).where(eq(runs.run_id, run_id));
+            return run_id;
+        } else {
+            throw new Error("Image generation failed: Invalid response from ComfyDeploy");
+        }
+    } catch (error) {
+        console.error("Error calling ComfyDeploy API:", error);
+        throw new Error("Error generating image");
+    }
 }
