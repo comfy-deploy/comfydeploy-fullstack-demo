@@ -40,7 +40,10 @@ export function ImageGenerationResult({
 		}
 		if (res && res.status === "success") {
 			// console.log(res.outputs?.[0]?.data);
-			setImage(res.outputs?.[0]?.data?.images?.[0].url ?? "");
+			const image = res.outputs?.[0]?.data?.images?.[0];
+			if (image && !(typeof image === "string")) {
+				setImage(image.url);
+			}
 			setLoading(false);
 		}
 	}, [data]);
@@ -74,7 +77,11 @@ export function ImageGenerationResult({
 			)}
 		>
 			{!loading && image && (
-				<img className="w-full h-full" src={image} alt="Generated image"></img>
+				<img
+					className="w-full h-full"
+					src={image}
+					alt="Generated output"
+				/>
 			)}
 			{!image && status && (
 				<div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
