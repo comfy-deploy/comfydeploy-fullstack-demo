@@ -3,12 +3,10 @@ import { Onboarding } from "@/components/Onboarding";
 import { UserRuns } from "@/components/UserRuns";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getUserRuns } from "@/server/getUserRuns";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
-import { SWRConfig } from "swr";
 
 export default function Home() {
 	return (
@@ -58,14 +56,6 @@ export default function Home() {
 
 async function UserRunsAsync() {
 	return (
-		<SWRConfig
-			value={{
-				fallback: {
-					userRuns: await getUserRuns(),
-				},
-			}}
-		>
-			<UserRuns />
-		</SWRConfig>
+		<UserRuns />
 	);
 }

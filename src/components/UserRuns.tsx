@@ -1,15 +1,20 @@
 "use client";
 
-import useSWR from "swr";
-import { getUserRuns } from "@/server/getUserRuns";
 import React from "react";
 import { ImageGenerationResult } from "./ImageGenerationResult";
-import { useAuth, useUser } from "@clerk/nextjs";
 import { Sparkle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export function UserRuns() {
-	const { data: userRuns, isValidating } = useSWR("userRuns", getUserRuns, {
-		refreshInterval: 5000,
+	const { data: userRuns, isLoading } = useQuery<{
+		run_id: string;
+		createdAt: number;
+		image_url: string;
+		inputs: Record<string, string>;
+	}[]>({
+		queryKey: ["userRuns"],
+		queryFn: () => fetch("/api/runs").then((res) => res.json()),
+		refetchInterval: 5000,
 	});
 
 	if (userRuns && userRuns.length > 0) {
@@ -39,6 +44,6 @@ export function UserRuns() {
 	}
 
 	return <div className="text-sm flex w-full h-[calc(100vh-45px-50px)] justify-center items-center text-gray-400 gap-2">
-		Start generating some images! <Sparkle size={16}/>
+		Start generating some images! <Sparkle size={16} />
 	</div>;
 }

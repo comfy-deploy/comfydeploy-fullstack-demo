@@ -1,96 +1,13 @@
 "use client";
 
-import { ImageGenerationResult } from "@/components/ImageGenerationResult";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { generateImage } from "@/server/generate";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Card } from "./ui/card";
-import { ArrowRightIcon, WandSparklesIcon, Zap } from "lucide-react";
-import { toast } from "sonner";
-import { mutate } from "swr";
+import { WandSparklesIcon } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { cn } from "@/lib/utils";
-// import { useComfyWebSocket } from "@/hooks/useComfyWebSocket";
-import { Badge } from "./ui/badge";
-
-// function RealtimeCanvas(props: {
-// 	prompt: string;
-// }) {
-// 	const canvasRef = useRef<HTMLCanvasElement>(null); // Reference to the canvas element
-
-// 	const { status, sendInput, queuePrompt, currentLog } = useComfyWebSocket({
-// 		workflow_id: "0",
-// 		getWebsocketUrl: getRealtimeWebsocketUrl,
-// 		onOutputReceived: ({ data, outputId, imageType }) => {
-// 			const url = URL.createObjectURL(data);
-
-// 			const canvas = canvasRef.current;
-// 			const ctx = canvas?.getContext("2d");
-
-// 			console.log(imageType, outputId, data);
-
-// 			if (ctx) {
-// 				const img = new Image();
-// 				img.onload = () => {
-// 					if (canvas) {
-// 						ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-// 					}
-// 					URL.revokeObjectURL(url); // Clean up
-// 				};
-// 				img.src = url;
-// 			}
-// 		},
-// 	});
-
-// 	const preStatus = useRef(status);
-
-// 	useEffect(() => {
-// 		if (preStatus.current !== status && status === "ready") {
-// 			sendInput({
-// 				positive_prompt: props.prompt,
-// 			});
-// 			queuePrompt();
-// 		}
-// 		preStatus.current = status;
-// 	}, [status, sendInput, queuePrompt]);
-
-// 	useEffect(() => {
-// 		sendInput({
-// 			positive_prompt: props.prompt,
-// 		});
-// 		queuePrompt();
-
-// 		console.log(props.prompt);
-// 	}, [props.prompt, sendInput, queuePrompt]);
-
-// 	return (
-// 		<div className="relative">
-// 			<div className="flex gap-2 absolute top-1 left-1 z-10">
-// 				<Badge variant={"default"} className="w-fit">
-// 					Status: {status}
-// 				</Badge>
-// 				{(currentLog || status === "connected" || status === "ready") && (
-// 					<Badge variant={"default"} className="w-fit">
-// 						{currentLog}
-// 						{status === "connected" && !currentLog && "starting comfy ui"}
-// 						{status === "ready" && !currentLog && " running"}
-// 					</Badge>
-// 				)}
-// 			</div>
-
-// 			<div className="relative w-full">
-// 				<canvas
-// 					ref={canvasRef}
-// 					className="rounded-lg ring-1 ring-black/10 w-full aspect-square"
-// 					width={1024}
-// 					height={1024}
-// 				/>
-// 			</div>
-// 		</div>
-// 	);
-// }
+import { queryClient } from "@/hooks/hooks";
 
 export function App() {
 	const [prompt, setPrompt] = useState(
@@ -140,8 +57,11 @@ export function App() {
 						iconPlacement="right"
 						onClick={async () => {
 							// await new Promise((resolve) => setTimeout(resolve, 3000));
-							const runId = await generateImage(prompt);
-							mutate("userRuns");
+							const runId = await fetch("/api/run", {
+								method: "POST",
+								body: JSON.stringify({ prompt }),
+							}).then((res) => res.json());
+							queryClient.invalidateQueries({ queryKey: ["userRuns"] });
 						}}
 					>
 						Generate

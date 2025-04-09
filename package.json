@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.30.10",
     "drizzle-zod": "^0.5.1",
     "lucide-react": "^0.378.0",
+    "motion": "^12.6.3",
     "next": "rc",
     "next-themes": "^0.3.0",
     "react": "rc",

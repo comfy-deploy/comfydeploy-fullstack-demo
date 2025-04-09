@@ -36,6 +36,7 @@ try {
 		);
 		my_error.stack = "";
 		console.log(my_error.message);
+		console.log("run\ncp .env.example .env.local\n");
 		// throw my_error;
 		process.exit(1);
 	}

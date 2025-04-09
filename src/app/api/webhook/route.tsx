@@ -2,31 +2,36 @@ import { db } from "@/db/db";
 import { runs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { ComfyDeploy } from "comfydeploy";
-
-const cd = new ComfyDeploy();
+import { findOutputImageById } from "@/lib/findOutputById";
 
 export async function POST(request: Request) {
-	const data = await cd.validateWebhook({ request });
+	let data;
+	try {
+		data = await request.json();
+	} catch (error) {
+		console.error(error);
+		return NextResponse.json({ message: "error, but skipping" }, { status: 200 });
+	}
 
-	const { status, runId, outputs, liveStatus, progress } = data;
+	const { status, run_id, outputs, live_status, progress, event_type } = data;
 
-	if (status === "success") {
-		const data = outputs?.[0].data?.images?.[0];
-		if (data && typeof data !== "string") {
-			const imageUrl = data.url;
+	if (event_type === "run.updated" && status === "success") {
+		// Find the final result image by output_id
+		const finalImage = findOutputImageById(outputs, "final_result");
+		if (finalImage) {
+			const imageUrl = finalImage.url;
 			await db
 				.update(runs)
 				.set({
 					image_url: imageUrl,
 				})
-				.where(eq(runs.run_id, runId));
-			console.log("updated", runId, imageUrl);
+				.where(eq(runs.run_id, run_id));
+			console.log("updated", run_id, imageUrl);
 		}
 	}
 
 	// Do your things
-	console.log(status, runId, outputs);
+	console.log(status, run_id, outputs);
 
 	return NextResponse.json({ message: "success" }, { status: 200 });
 }
