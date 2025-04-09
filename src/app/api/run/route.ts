@@ -58,6 +58,11 @@ export async function POST(request: NextRequest) {
 		})
 	})
 
+	if (data.status !== 200) {
+		console.log(data.statusText);
+		return NextResponse.json({ error: "Failed to create run" }, { status: 500 })
+	}
+
 	const json = await data.json()
 
 	if (json) {
