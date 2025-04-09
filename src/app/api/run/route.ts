@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
 	const data = await fetch(`https://api.comfydeploy.com/api/run/deployment/queue`, {
 		method: "POST",
 		headers: {
-			'Authorization': `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`
+			'Authorization': `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`,
+			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
 			deployment_id: process.env.COMFY_DEPLOY_WF_DEPLOYMENT_ID,
