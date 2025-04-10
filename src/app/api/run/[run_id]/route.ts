@@ -1,11 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { run_id: string } }
-) {
-  const { userId } = auth();
+export async function GET(request: Request, props: { params: Promise<{ run_id: string }> }) {
+  const params = await props.params;
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

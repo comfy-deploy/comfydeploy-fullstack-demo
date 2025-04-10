@@ -8,7 +8,7 @@ import { runs } from "@/db/schema";
 const isDevelopment = process.env.NODE_ENV === "development";
 
 async function getEndpoint() {
-	const headersList = headers();
+	const headersList = await headers();
 	const host = headersList.get("host") || "";
 	const protocol = headersList.get("x-forwarded-proto") || "";
 	let endpoint = `${protocol}://${host}`;
@@ -33,7 +33,7 @@ async function getEndpoint() {
 }
 
 export async function POST(request: NextRequest) {
-	const { userId } = auth();
+	const { userId } = await auth();
 	if (!userId) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
