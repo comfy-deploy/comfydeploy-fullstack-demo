@@ -57,6 +57,7 @@ export function ImageGenerationResult({
 				className,
 			)}
 		>
+
 			{!loading && image && (
 				<AnimatePresence mode="wait">
 					<motion.img
@@ -88,31 +89,32 @@ export function ImageGenerationResult({
 					</div>
 				</AnimatePresence>
 			)}
-			{!image && status && (
+			{!image && (
 				<div className="absolute z-10 top-0 left-0 w-full h-full flex flex-col items-center justify-center gap-2 px-4">
-					{
-						!previewImage && (
-							<>
-								<div className="flex items-center justify-center gap-2 text-gray-600">
-									{status} <LoadingIcon />
-								</div>
-								<Progress value={(progress !== undefined ? progress : 0) * 100} className="h-[2px] w-full" />
-								<span className="text-sm text-center text-gray-400">
-									{" "}
-									{liveStatus !== undefined && liveStatus}
-								</span>
-							</>
-						)
-					}
-					{
-						previewImage && (
-							<>
+					{data?.queue_position !== undefined && data?.queue_position != null && (
+						<div className="flex items-center justify-center gap-1 text-xs bg-black/70 text-white px-3 py-2 rounded-full shadow-md">
+							<span>{data.queue_position === 0 ? "Next" : `Queue: ${data.queue_position}`}</span> <LoadingIcon className="w-3 h-3" />
+						</div>
+					)}
+					{data?.queue_position === undefined || data?.queue_position === null && (
+						<>
+							{previewImage ? (
 								<div className="flex items-center justify-center gap-2 drop-shadow text-white">
 									<span className="">Finishing touches...</span> <LoadingIcon />
 								</div>
-							</>
-						)
-					}
+							) : (
+								<>
+									<div className="flex items-center justify-center gap-2 text-gray-600">
+										{status} <LoadingIcon />
+									</div>
+									<Progress value={(progress !== undefined ? progress : 0) * 100} className="h-[2px] w-full max-w-[200px]" />
+									{liveStatus !== undefined && liveStatus && (
+										<span className="text-sm text-center text-gray-400">{liveStatus}</span>
+									)}
+								</>
+							)}
+						</>
+					)}
 				</div>
 			)}
 			{loading && <Skeleton className="absolute inset-0 w-full h-full" />}

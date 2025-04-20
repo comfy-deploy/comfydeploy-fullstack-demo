@@ -10,7 +10,7 @@ export async function GET(request: Request, props: { params: Promise<{ run_id: s
 
   const { run_id } = params;
 
-  const data = await fetch(`https://api.comfydeploy.com/api/run/${run_id}`, {
+  const data = await fetch(`https://api.comfydeploy.com/api/run/${run_id}?queue_position=true`, {
     headers: {
       'Authorization': `Bearer ${process.env.COMFY_DEPLOY_API_KEY}`
     }
@@ -18,13 +18,14 @@ export async function GET(request: Request, props: { params: Promise<{ run_id: s
 
   const json = await data.json()
 
-  const { live_status, status, outputs, progress } = json
+  const { live_status, status, outputs, progress, queue_position } = json
 
   // Now you can use the run_id in your response
   return NextResponse.json({
     live_status,
     status,
     outputs,
-    progress
+    progress,
+    queue_position
   })
 }
